@@ -565,10 +565,10 @@ function BecomeJury({ nav }) {
       {/* CTA → Login */}
       <div style={{textAlign:"center"}}>
         <p style={{fontSize:12,color:"#888",marginBottom:20,lineHeight:1.8}}>
-          Prêt à rejoindre le jury ? Crée ton compte CROWDN — tu compléteras ton profil juré directement à l'inscription.
+          Prêt à rejoindre le jury ? Crée ton compte — tu compléteras ton profil juré directement à l'inscription.
         </p>
         <button className="bp" style={{padding:"16px 40px",fontSize:11,letterSpacing:3}}
-          onClick={()=>nav("login")}>
+          onClick={()=>nav("login",{wantsJury:true})}>
           👑 Créer mon compte juré
         </button>
         <p style={{fontSize:11,color:"#555",marginTop:16}}>
@@ -789,8 +789,8 @@ function BecomeJury({ nav }) {
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
-function Login({ nav, onLogin }) {
-  const [mode, setMode] = useState("login");
+function Login({ nav, onLogin, wantsJury: initWantsJury = false }) {
+  const [mode, setMode] = useState(initWantsJury ? "signup" : "login");
   const [step, setStep] = useState("auth"); // auth | profile
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -800,8 +800,8 @@ function Login({ nav, onLogin }) {
   const [success, setSuccess] = useState("");
   const [newUser, setNewUser] = useState(null);
 
-  // Profil jury
-  const [wantsJury, setWantsJury] = useState(false);
+  // Profil jury — pré-sélectionné si vient de Become a Jury
+  const [wantsJury, setWantsJury] = useState(initWantsJury);
   const [juryProfile, setJuryProfile] = useState("");
   const [pressCard, setPressCard] = useState("");
   const [media, setMedia] = useState("");
@@ -1527,7 +1527,10 @@ export default function App() {
     fetchData();
   }, []);
 
+  const [wantsJuryLogin, setWantsJuryLogin] = useState(false);
+
   const nav=(p,d)=>{
+    if(d && d.wantsJury){ setWantsJuryLogin(true); setPage("login"); window.scrollTo({top:0,behavior:"smooth"}); return; }
     setPage(p);
     if(d && d.filterGenre){setGenreFilter(d.filterGenre);}
     else if(d && d.artistName){setArtistName(d.artistName);}
@@ -1535,13 +1538,17 @@ export default function App() {
     window.scrollTo({top:0,behavior:"smooth"});
   };
 
+  // Nav selon état connexion
   const navItems=[
     {key:"home",label:"Accueil",icon:"🏠"},
     {key:"upcoming",label:"À venir",icon:"🎵"},
     {key:"past",label:"Passés",icon:"🎭"},
-    {key:"how-it-works",label:"Comment ça marche",icon:"💡"},
-    {key:"become-jury",label:"Jury",icon:"👑"},
-    ...(role==="jury"?[{key:"jury-dash",label:"Mon jury",icon:"⭐"}]:[]),
+    {key:"how-it-works",label:"Info",icon:"💡"},
+    // "Jury" visible uniquement si pas connecté
+    ...(!role?[{key:"become-jury",label:"Jury",icon:"👑"}]:[]),
+    // Espace juré si connecté juré
+    ...(role==="jury"?[{key:"jury-dash",label:"Mon espace",icon:"⭐"}]:[]),
+    // Admin si connecté admin
     ...(role==="admin"?[{key:"admin",label:"Admin",icon:"🔑"}]:[]),
   ];
 
@@ -1555,15 +1562,29 @@ export default function App() {
         </button>
         <div style={{display:"flex",gap:20,alignItems:"center"}}>
           {navItems.map(item=>(<button key={item.key} className={`nl ${page===item.key?"active":""}`} onClick={()=>nav(item.key)}>{item.label}</button>))}
-          {role
-            ? <button className="bo" style={{fontSize:9,padding:"8px 16px"}} onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}>Déconnexion</button>
-            : <button className="bp" onClick={()=>nav("login")}>Connexion</button>
-          }
+          {role ? (
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:11,color:GOLD,fontWeight:600,letterSpacing:1}}>
+                {user?.email?.split("@")[0]}
+              </span>
+              <button className="bo" style={{fontSize:9,padding:"8px 16px"}}
+                onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}>
+                Déconnexion
+              </button>
+            </div>
+          ) : (
+            <button className="bp" onClick={()=>nav("login")}>Connexion</button>
+          )}
         </div>
       </nav>
 
       {page==="home"            && <HomePage nav={nav} upcoming={upcomingData} past={pastData}/>}
-      {page==="login"           && <Login nav={nav} onLogin={(r,u)=>{setRole(r);setUser(u);}}/>}
+      {page==="login"           && <Login nav={nav} onLogin={(r,u)=>{
+        setRole(r); setUser(u); setWantsJuryLogin(false);
+        if(r==="jury") nav("jury-dash");
+        else if(r==="admin") nav("admin");
+        else nav("home");
+      }} wantsJury={wantsJuryLogin}/>}
       {page==="upcoming"        && <UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData}/>}
       {page==="upcoming-detail" && <UpcomingDetail c={sel} nav={nav}/>}
       {page==="past"            && <PastPage nav={nav} concerts={pastData}/>}
@@ -1574,18 +1595,17 @@ export default function App() {
       {page==="jury-dash"       && role==="jury" && <JuryDash/>}
       {page==="admin"           && role==="admin" && <AdminDash/>}
 
+      {/* Mobile nav — adapté selon connexion */}
       <div className="mnav">
-        {[{key:"home",icon:"🏠",label:"Accueil"},{key:"upcoming",icon:"🎵",label:"À venir"},{key:"past",icon:"🎭",label:"Passés"},{key:"how-it-works",icon:"💡",label:"Comment"},{key:"become-jury",icon:"👑",label:"Jury"}].map(item=>(
-          <button key={item.key} className={`mni ${page===item.key?"active":""}`} onClick={()=>nav(item.key)}>
-            <span style={{fontSize:18}}>{item.icon}</span>{item.label}
-          </button>
-        ))}
-        {!role
-          ? <button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>
-          : role==="jury" ? <button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon jury</button>
-          : role==="admin" ? <button className={`mni ${page==="admin"?"active":""}`} onClick={()=>nav("admin")}><span style={{fontSize:18}}>🔑</span>Admin</button>
-          : null
-        }
+        <button className={`mni ${page==="home"?"active":""}`} onClick={()=>nav("home")}><span style={{fontSize:18}}>🏠</span>Accueil</button>
+        <button className={`mni ${page==="upcoming"?"active":""}`} onClick={()=>nav("upcoming")}><span style={{fontSize:18}}>🎵</span>À venir</button>
+        <button className={`mni ${page==="past"?"active":""}`} onClick={()=>nav("past")}><span style={{fontSize:18}}>🎭</span>Passés</button>
+        <button className={`mni ${page==="how-it-works"?"active":""}`} onClick={()=>nav("how-it-works")}><span style={{fontSize:18}}>💡</span>Info</button>
+        {!role && <button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Jury</button>}
+        {!role && <button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
+        {role==="jury" && <button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon espace</button>}
+        {role==="admin" && <button className={`mni ${page==="admin"?"active":""}`} onClick={()=>nav("admin")}><span style={{fontSize:18}}>🔑</span>Admin</button>}
+        {role && <button className="mni" onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}><span style={{fontSize:18}}>🚪</span>Quitter</button>}
       </div>
     </>
   );
