@@ -496,13 +496,91 @@ function PastDetail({ c }) {
 
 // ─── BECOME JURY ──────────────────────────────────────────────────────────────
 function BecomeJury({ nav }) {
-  const [applied, setApplied] = useState(false);
-  const [form, setForm] = useState({
-    name:"", email:"", profile:"", motivation:"",
-    pressCard:"", media:"", pressDoc:"",
-    proRole:"", company:"", proDoc:"",
-    genres:["","","","",""],
-  });
+  return (
+    <div style={{padding:"100px 20px 80px",maxWidth:720,margin:"0 auto"}}>
+      {/* Header */}
+      <div style={{textAlign:"center",marginBottom:48}}>
+        <Crown size={44}/>
+        <p className="sl" style={{marginTop:20,marginBottom:8}}>Rejoindre l'élite</p>
+        <h1 className="fd" style={{fontSize:"clamp(28px,6vw,44px)",fontWeight:400,letterSpacing:2,marginBottom:16}}>Become a Jury Member</h1>
+        <div style={{background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.2)",padding:"16px 20px",maxWidth:540,margin:"0 auto",display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
+          <p style={{fontSize:12,color:"rgba(245,240,232,0.75)",lineHeight:1.7,textAlign:"left"}}>
+            Chaque concert est évalué par un panel mixte de 4 types de jurés. <strong style={{color:GOLD}}>Les votes individuels restent privés.</strong> Seul le résultat collectif est publié — pour garantir l'objectivité totale.
+          </p>
+        </div>
+      </div>
+
+      <div className="gd" style={{marginBottom:40}}/>
+
+      {/* 4 types */}
+      <p className="sl" style={{marginBottom:8}}>Les 4 profils de jurés</p>
+      <p style={{fontSize:12,color:"#777",marginBottom:24,lineHeight:1.7}}>Un panel équilibré pour un regard complet sur chaque performance.</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:48}}>
+        {JURY_TYPES.map((j,i)=>(
+          <div key={j.type} className="jury-type-card" style={{animation:`fadeUp 0.4s ${i*0.1}s ease both`,opacity:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+              <span style={{fontSize:24}}>{j.icon}</span>
+              <div>
+                <p style={{fontWeight:700,fontSize:13,color:j.color}}>{j.type}</p>
+                <span style={{display:"inline-block",padding:"2px 8px",background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",fontSize:8,letterSpacing:1.5,color:"#888",textTransform:"uppercase",fontWeight:600,marginTop:3}}>{j.tag}</span>
+              </div>
+            </div>
+            <p style={{fontSize:11,color:"#888",lineHeight:1.7}}>{j.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="gd" style={{marginBottom:40}}/>
+
+      {/* 6 critères */}
+      <p className="sl" style={{marginBottom:8}}>Sur quoi le jury note</p>
+      <p style={{fontSize:12,color:"#777",marginBottom:24}}>6 critères publics et transparents. Chaque juré note de 1 à 10 sur chacun.</p>
+      <div style={{marginBottom:48}}>
+        {CRITERIA.map((c,i)=>(
+          <div key={c.name} className="criteria-pill" style={{animation:`fadeUp 0.4s ${i*0.07}s ease both`,opacity:0}}>
+            <span style={{fontSize:20,flexShrink:0}}>{c.icon}</span>
+            <div style={{flex:1}}>
+              <p style={{fontWeight:700,fontSize:12,color:GOLD,marginBottom:2}}>{c.name}</p>
+              <p style={{fontSize:11,color:"#888"}}>{c.desc}</p>
+            </div>
+            <span style={{fontSize:11,color:"#555",fontWeight:600,letterSpacing:1}}>/ 10</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="gd" style={{marginBottom:40}}/>
+
+      {/* Ce que tu obtiens */}
+      <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:24,marginBottom:40}}>
+        <p className="sl" style={{marginBottom:16}}>Ce que vous obtenez</p>
+        {["Accès à l'espace jury privé","Concerts assignés en avant-première","Badge Juré certifié CROWDN","Profil visible sur la plateforme","Participation aux CROWDN Awards","Accès aux coulisses partenaires"].map((item,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",fontSize:12}}>
+            <span style={{color:GOLD,fontSize:14}}>✦</span>
+            <span style={{color:"#ccc"}}>{item}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA → Login */}
+      <div style={{textAlign:"center"}}>
+        <p style={{fontSize:12,color:"#888",marginBottom:20,lineHeight:1.8}}>
+          Prêt à rejoindre le jury ? Crée ton compte CROWDN — tu compléteras ton profil juré directement à l'inscription.
+        </p>
+        <button className="bp" style={{padding:"16px 40px",fontSize:11,letterSpacing:3}}
+          onClick={()=>nav("login")}>
+          👑 Créer mon compte juré
+        </button>
+        <p style={{fontSize:11,color:"#555",marginTop:16}}>
+          Déjà membre ?{" "}
+          <span style={{color:GOLD,cursor:"pointer",fontWeight:600}} onClick={()=>nav("login")}>
+            Se connecter
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:720,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:48}}>
@@ -712,7 +790,240 @@ function BecomeJury({ nav }) {
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 function Login({ nav, onLogin }) {
-  const [mode, setMode] = useState("login"); // login | signup
+  const [mode, setMode] = useState("login");
+  const [step, setStep] = useState("auth"); // auth | profile
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [newUser, setNewUser] = useState(null);
+
+  // Profil jury
+  const [wantsJury, setWantsJury] = useState(false);
+  const [juryProfile, setJuryProfile] = useState("");
+  const [pressCard, setPressCard] = useState("");
+  const [media, setMedia] = useState("");
+  const [pressDoc, setPressDoc] = useState("");
+  const [proRole, setProRole] = useState("");
+  const [company, setCompany] = useState("");
+  const [proDoc, setProDoc] = useState("");
+  const [genres, setGenres] = useState(["","","","",""]);
+  const [motivation, setMotivation] = useState("");
+
+  const handleLogin = async () => {
+    if (!email || !password) { setError("Email et mot de passe requis"); return; }
+    setLoading(true); setError("");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { setError("Email ou mot de passe incorrect"); return; }
+      const { data: profile } = await supabase.from("profiles").select("role,name").eq("id", data.user.id).single();
+      onLogin(profile?.role || "user", data.user);
+      nav("home");
+    } catch(e) { setError("Erreur de connexion"); }
+    finally { setLoading(false); }
+  };
+
+  const handleSignup = async () => {
+    if (!email || !password || !name) { setError("Tous les champs sont requis"); return; }
+    if (password.length < 6) { setError("Mot de passe : 6 caractères minimum"); return; }
+    setLoading(true); setError("");
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) { setError(error.message); return; }
+      if (data.user) {
+        await supabase.from("profiles").upsert({ id: data.user.id, name, email, role: "user" });
+        setNewUser(data.user);
+        setStep("profile"); // → étape profil
+      }
+    } catch(e) { setError("Erreur lors de la création du compte"); }
+    finally { setLoading(false); }
+  };
+
+  const handleProfileComplete = async () => {
+    setLoading(true);
+    try {
+      if (wantsJury) {
+        await supabase.from("jury_applications").insert({
+          name,
+          email,
+          profile_type: juryProfile,
+          genre: genres.filter(g=>g).join(", "),
+          motivation,
+          status: "pending"
+        });
+      }
+      setSuccess("Profil créé ! Vérifie ton email pour confirmer ton compte.");
+      setTimeout(() => { onLogin("user", newUser); nav("home"); }, 2000);
+    } catch(e) { setError("Erreur"); }
+    finally { setLoading(false); }
+  };
+
+  // ─ Étape 1 : Auth ─
+  if (step === "auth") return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"100px 20px 80px",background:`radial-gradient(ellipse at 50% 50%,rgba(201,168,76,0.05) 0%,transparent 60%),#0A0A0A`}}>
+      <div style={{width:"100%",maxWidth:400}}>
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <Crown size={36}/>
+          <div style={{marginTop:14,marginBottom:4}}>
+            <span style={{fontWeight:800,fontSize:18,letterSpacing:6,color:GOLD}}>CROWD</span>
+            <span className="fd" style={{fontSize:18,fontWeight:700,color:GOLD}}>N</span>
+          </div>
+          <p style={{fontSize:9,letterSpacing:3,color:"#666",textTransform:"uppercase"}}>Couronné par la Foule</p>
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,marginBottom:28,border:"1px solid rgba(201,168,76,0.2)"}}>
+          {[["login","Connexion"],["signup","Créer un compte"]].map(([m,l])=>(
+            <button key={m} onClick={()=>{setMode(m);setError("");setSuccess("");}}
+              style={{padding:"12px",background:mode===m?"rgba(201,168,76,0.12)":"transparent",border:"none",color:mode===m?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s"}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          {mode==="signup" && <input className="ifield" placeholder="Votre nom complet" value={name} onChange={e=>setName(e.target.value)}/>}
+          <input className="ifield" placeholder="votre@email.com" type="email" value={email} onChange={e=>setEmail(e.target.value)}/>
+          <input className="ifield" type="password" placeholder={mode==="signup"?"Mot de passe (6 caractères min.)":"Mot de passe"} value={password} onChange={e=>setPassword(e.target.value)}/>
+        </div>
+
+        {error && <div style={{padding:"10px 14px",background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF6060",fontSize:11,marginBottom:16}}>⚠️ {error}</div>}
+        {success && <div style={{padding:"10px 14px",background:"rgba(76,200,100,0.08)",border:"1px solid rgba(76,200,100,0.25)",color:"#4CC864",fontSize:11,marginBottom:16}}>✅ {success}</div>}
+
+        <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:loading?0.6:1}}
+          onClick={mode==="login"?handleLogin:handleSignup} disabled={loading}>
+          {loading?"..." : mode==="login"?"Connexion":"Créer mon compte →"}
+        </button>
+
+        {mode==="login" && (
+          <p style={{textAlign:"center",marginTop:16,fontSize:11,color:"#555"}}>
+            Mot de passe oublié ?{" "}
+            <span style={{color:GOLD,cursor:"pointer",fontWeight:600}} onClick={async()=>{
+              if(!email){setError("Entrez votre email d'abord");return;}
+              await supabase.auth.resetPasswordForEmail(email);
+              setSuccess("Email de réinitialisation envoyé !");
+            }}>Réinitialiser</span>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+  return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"100px 20px 80px",background:`radial-gradient(ellipse at 50% 50%,rgba(201,168,76,0.05) 0%,transparent 60%),#0A0A0A`}}>
+      <div style={{width:"100%",maxWidth:500}}>
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <Crown size={36}/>
+          <p className="sl" style={{marginTop:16,marginBottom:8}}>Bienvenue, {name} 👑</p>
+          <h2 className="fd" style={{fontSize:28,fontWeight:400,letterSpacing:2,marginBottom:8}}>Complète ton profil</h2>
+          <p style={{fontSize:12,color:"#888",lineHeight:1.7}}>Une dernière étape avant de rejoindre CROWDN.</p>
+        </div>
+
+        <div className="gd" style={{marginBottom:28}}/>
+
+        {/* Veux-tu être juré ? */}
+        <p className="sl" style={{marginBottom:14}}>Quel est ton rôle ?</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:28}}>
+          <button onClick={()=>setWantsJury(false)}
+            style={{padding:"18px",background:!wantsJury?"rgba(201,168,76,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${!wantsJury?GOLD:"rgba(201,168,76,0.12)"}`,color:!wantsJury?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",textAlign:"center",transition:"all 0.2s"}}>
+            <div style={{fontSize:24,marginBottom:6}}>👤</div>
+            Utilisateur
+            <p style={{fontSize:9,color:"#666",marginTop:4,fontWeight:400,letterSpacing:0,textTransform:"none"}}>Je suis fan de concerts</p>
+          </button>
+          <button onClick={()=>setWantsJury(true)}
+            style={{padding:"18px",background:wantsJury?"rgba(201,168,76,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${wantsJury?GOLD:"rgba(201,168,76,0.12)"}`,color:wantsJury?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",textAlign:"center",transition:"all 0.2s"}}>
+            <div style={{fontSize:24,marginBottom:6}}>⭐</div>
+            Candidat Jury
+            <p style={{fontSize:9,color:"#666",marginTop:4,fontWeight:400,letterSpacing:0,textTransform:"none"}}>Je veux évaluer des concerts</p>
+          </button>
+        </div>
+
+        {/* Formulaire jury si sélectionné */}
+        {wantsJury && (
+          <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:24}}>
+            <div className="gd"/>
+            <p className="sl" style={{marginTop:8}}>Ton profil de juré</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {[["journalist","📰 Journaliste"],["music_pro","🎶 Acteur musique"],["fan","🎤 Fan du genre"],["nonfan","👁️ Non-fan"]].map(([v,l])=>(
+                <button key={v} onClick={()=>setJuryProfile(v)}
+                  style={{padding:"10px 8px",background:juryProfile===v?"rgba(201,168,76,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${juryProfile===v?GOLD:"rgba(201,168,76,0.12)"}`,color:juryProfile===v?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:9,fontWeight:700,letterSpacing:1,textTransform:"uppercase",transition:"all 0.2s"}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {juryProfile==="journalist" && (
+              <div style={{display:"flex",flexDirection:"column",gap:10,padding:"14px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)"}}>
+                <p style={{fontSize:11,color:GOLD,fontWeight:700}}>📰 Vérification journaliste</p>
+                <input className="ifield" placeholder="Numéro carte de presse CCIJP" value={pressCard} onChange={e=>setPressCard(e.target.value)}/>
+                <input className="ifield" placeholder="Média / Publication" value={media} onChange={e=>setMedia(e.target.value)}/>
+                <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px",border:`2px dashed ${pressDoc?"rgba(76,200,100,0.5)":"rgba(201,168,76,0.3)"}`,background:pressDoc?"rgba(76,200,100,0.05)":"rgba(201,168,76,0.02)",cursor:"pointer"}}>
+                  <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setPressDoc(e.target.files[0]?.name||"")}/>
+                  <span style={{fontSize:18}}>{pressDoc?"✅":"📎"}</span>
+                  <div><p style={{fontSize:11,fontWeight:600,color:pressDoc?"#4CC864":GOLD}}>{pressDoc||"Photo carte de presse"}</p><p style={{fontSize:9,color:"#666"}}>JPG, PNG ou PDF</p></div>
+                </label>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start",padding:"8px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                  <span>🔒</span><p style={{fontSize:10,color:"#666",lineHeight:1.6}}>Document supprimé après vérification — RGPD</p>
+                </div>
+              </div>
+            )}
+
+            {juryProfile==="music_pro" && (
+              <div style={{display:"flex",flexDirection:"column",gap:10,padding:"14px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)"}}>
+                <p style={{fontSize:11,color:GOLD,fontWeight:700}}>🎶 Vérification acteur de la musique</p>
+                <select className="ifield" style={{cursor:"pointer"}} value={proRole} onChange={e=>setProRole(e.target.value)}>
+                  <option value="">Votre rôle</option>
+                  <option>Manager / Agent artistique</option>
+                  <option>Tourneur / Promoteur</option>
+                  <option>Directeur artistique / Label</option>
+                  <option>Booker / Programmateur</option>
+                  <option>Intermittent du spectacle</option>
+                  <option>Autre professionnel</option>
+                </select>
+                <input className="ifield" placeholder="Structure / Entreprise" value={company} onChange={e=>setCompany(e.target.value)}/>
+                <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px",border:`2px dashed ${proDoc?"rgba(76,200,100,0.5)":"rgba(201,168,76,0.3)"}`,background:proDoc?"rgba(76,200,100,0.05)":"rgba(201,168,76,0.02)",cursor:"pointer"}}>
+                  <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setProDoc(e.target.files[0]?.name||"")}/>
+                  <span style={{fontSize:18}}>{proDoc?"✅":"📎"}</span>
+                  <div><p style={{fontSize:11,fontWeight:600,color:proDoc?"#4CC864":GOLD}}>{proDoc||"Justificatif professionnel"}</p><p style={{fontSize:9,color:"#666"}}>Contrat, fiche de paie, carte intermittent...</p></div>
+                </label>
+                <div style={{display:"flex",gap:8,alignItems:"flex-start",padding:"8px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)"}}>
+                  <span>🔒</span><p style={{fontSize:10,color:"#666",lineHeight:1.6}}>Document supprimé après vérification — RGPD</p>
+                </div>
+              </div>
+            )}
+
+            {(juryProfile==="fan"||juryProfile==="nonfan") && (
+              <div style={{display:"flex",flexDirection:"column",gap:10,padding:"14px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)"}}>
+                <p style={{fontSize:11,color:GOLD,fontWeight:700}}>🎵 Tes 5 genres préférés</p>
+                <p style={{fontSize:10,color:"#888",lineHeight:1.6}}>Du plus écouté au moins écouté — définit ton profil Fan ou Non-fan.</p>
+                {[1,2,3,4,5].map(n=>(
+                  <div key={n} style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{width:22,height:22,border:`1px solid ${GOLD}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:GOLD,flexShrink:0,fontFamily:"serif"}}>{n}</span>
+                    <select className="ifield" style={{cursor:"pointer"}} value={genres[n-1]||""} onChange={e=>{const g=[...genres];g[n-1]=e.target.value;setGenres(g);}}>
+                      <option value="">Genre {n}</option>
+                      {["Hip-Hop","Pop","Rock","R&B","Électro","Jazz","Metal","Classique","Reggae","Soul","Folk","Afrobeats","Flamenco","Punk","Latin","Blues"].map(g=>(<option key={g}>{g}</option>))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <textarea className="ifield" rows={3} placeholder="Pourquoi veux-tu rejoindre le jury CROWDN ?" value={motivation} onChange={e=>setMotivation(e.target.value)} style={{resize:"vertical"}}/>
+          </div>
+        )}
+
+        {error && <div style={{padding:"10px 14px",background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF6060",fontSize:11,marginBottom:16}}>⚠️ {error}</div>}
+        {success && <div style={{padding:"10px 14px",background:"rgba(76,200,100,0.08)",border:"1px solid rgba(76,200,100,0.25)",color:"#4CC864",fontSize:11,marginBottom:16}}>✅ {success}</div>}
+
+        <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:loading?0.6:1}}
+          onClick={handleProfileComplete} disabled={loading}>
+          {loading?"...":"Rejoindre CROWDN 👑"}
+        </button>
+      </div>
+    </div>
+  );
+}
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
