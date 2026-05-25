@@ -491,6 +491,12 @@ function PastDetail({ c }) {
 // ─── BECOME JURY ──────────────────────────────────────────────────────────────
 function BecomeJury({ nav }) {
   const [applied, setApplied] = useState(false);
+  const [form, setForm] = useState({
+    name:"", email:"", profile:"", motivation:"",
+    pressCard:"", media:"", pressDoc:"",
+    proRole:"", company:"", proDoc:"",
+    genres:["","","","",""],
+  });
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:720,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:48}}>
@@ -541,21 +547,137 @@ function BecomeJury({ nav }) {
           <div className="gd" style={{marginBottom:32}}/>
           <p className="sl" style={{marginBottom:20}}>Candidater</p>
           <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:24}}>
-            <input className="ifield" placeholder="Votre nom complet"/>
-            <input className="ifield" placeholder="Votre email"/>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <select className="ifield" style={{cursor:"pointer"}}>
-                <option value="">Votre profil</option>
-                <option>Journaliste</option>
-                <option>Acteur de la musique</option>
-                <option>Fan du genre</option>
-                <option>Non-fan du genre</option>
-              </select>
-              <input className="ifield" placeholder="Genre musical principal"/>
+
+            {/* Infos de base */}
+            <input className="ifield" placeholder="Votre nom complet" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+            <input className="ifield" placeholder="Votre email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})}/>
+
+            {/* Profil */}
+            <div>
+              <label className="sl" style={{display:"block",marginBottom:10,fontSize:9}}>Votre profil</label>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {[["journalist","📰 Journaliste"],["music_pro","🎶 Acteur musique"],["fan","🎤 Fan du genre"],["nonfan","👁️ Non-fan"]].map(([v,l])=>(
+                  <button key={v}
+                    style={{padding:"12px 8px",background:form.profile===v?"rgba(201,168,76,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${form.profile===v?GOLD:"rgba(201,168,76,0.12)"}`,color:form.profile===v?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1,textTransform:"uppercase",transition:"all 0.2s"}}
+                    onClick={()=>setForm({...form,profile:v})}>
+                    {l}
+                  </button>
+                ))}
+              </div>
             </div>
-            <textarea className="ifield" rows={3} placeholder="Pourquoi postuler ? (2-3 lignes)" style={{resize:"vertical"}}/>
+
+            {/* Champs spécifiques selon profil */}
+            {form.profile==="journalist" && (
+              <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:"16px 18px",display:"flex",flexDirection:"column",gap:12}}>
+                <p style={{fontSize:11,color:GOLD,fontWeight:700,letterSpacing:1}}>📰 Vérification Journaliste</p>
+                <input className="ifield" placeholder="Numéro de carte de presse CCIJP" value={form.pressCard} onChange={e=>setForm({...form,pressCard:e.target.value})}/>
+                <input className="ifield" placeholder="Média / Publication (ex: Les Inrocks, Télérama...)" value={form.media} onChange={e=>setForm({...form,media:e.target.value})}/>
+
+                {/* Upload carte de presse */}
+                <div>
+                  <label className="sl" style={{display:"block",marginBottom:8,fontSize:9}}>Photo de votre carte de presse</label>
+                  <label style={{
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                    padding:"16px",border:`2px dashed ${form.pressDoc ? "rgba(76,200,100,0.5)" : "rgba(201,168,76,0.3)"}`,
+                    background:form.pressDoc?"rgba(76,200,100,0.05)":"rgba(201,168,76,0.02)",
+                    cursor:"pointer",transition:"all 0.2s",
+                  }}>
+                    <input type="file" accept="image/*,.pdf" style={{display:"none"}}
+                      onChange={e=>setForm({...form,pressDoc:e.target.files[0]?.name||""})}/>
+                    <span style={{fontSize:20}}>{form.pressDoc ? "✅" : "📎"}</span>
+                    <div>
+                      <p style={{fontSize:11,fontWeight:600,color:form.pressDoc?"#4CC864":GOLD}}>
+                        {form.pressDoc ? form.pressDoc : "Cliquer pour uploader"}
+                      </p>
+                      <p style={{fontSize:9,color:"#666",marginTop:2}}>JPG, PNG ou PDF — max 5MB</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* RGPD */}
+                <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",padding:"10px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <span style={{fontSize:14,flexShrink:0}}>🔒</span>
+                  <p style={{fontSize:10,color:"#666",lineHeight:1.7}}>
+                    Conformément au RGPD, votre document est collecté uniquement pour vérifier votre statut de journaliste. Il sera <strong style={{color:"#aaa"}}>définitivement supprimé</strong> après vérification. Seule l'équipe CROWDN y a accès.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {form.profile==="music_pro" && (
+              <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:"16px 18px",display:"flex",flexDirection:"column",gap:12}}>
+                <p style={{fontSize:11,color:GOLD,fontWeight:700,letterSpacing:1}}>🎶 Vérification Acteur de la musique</p>
+                <select className="ifield" style={{cursor:"pointer"}} value={form.proRole} onChange={e=>setForm({...form,proRole:e.target.value})}>
+                  <option value="">Votre rôle dans l'industrie</option>
+                  <option>Manager / Agent artistique</option>
+                  <option>Tourneur / Promoteur</option>
+                  <option>Directeur artistique / Label</option>
+                  <option>Booker / Programmateur</option>
+                  <option>Intermittent du spectacle</option>
+                  <option>Autre professionnel</option>
+                </select>
+                <input className="ifield" placeholder="Structure / Entreprise" value={form.company} onChange={e=>setForm({...form,company:e.target.value})}/>
+
+                {/* Upload justificatif */}
+                <div>
+                  <label className="sl" style={{display:"block",marginBottom:8,fontSize:9}}>Justificatif professionnel</label>
+                  <p style={{fontSize:10,color:"#888",marginBottom:8,lineHeight:1.6}}>Contrat de travail, fiche de paie, carte d'intermittent, ou tout document prouvant votre activité dans l'industrie musicale.</p>
+                  <label style={{
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                    padding:"16px",border:`2px dashed ${form.proDoc ? "rgba(76,200,100,0.5)" : "rgba(201,168,76,0.3)"}`,
+                    background:form.proDoc?"rgba(76,200,100,0.05)":"rgba(201,168,76,0.02)",
+                    cursor:"pointer",transition:"all 0.2s",
+                  }}>
+                    <input type="file" accept="image/*,.pdf" style={{display:"none"}}
+                      onChange={e=>setForm({...form,proDoc:e.target.files[0]?.name||""})}/>
+                    <span style={{fontSize:20}}>{form.proDoc ? "✅" : "📎"}</span>
+                    <div>
+                      <p style={{fontSize:11,fontWeight:600,color:form.proDoc?"#4CC864":GOLD}}>
+                        {form.proDoc ? form.proDoc : "Cliquer pour uploader"}
+                      </p>
+                      <p style={{fontSize:9,color:"#666",marginTop:2}}>JPG, PNG ou PDF — max 5MB</p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* RGPD */}
+                <div style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",padding:"10px 12px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <span style={{fontSize:14,flexShrink:0}}>🔒</span>
+                  <p style={{fontSize:10,color:"#666",lineHeight:1.7}}>
+                    Conformément au RGPD, votre document est collecté uniquement pour vérifier votre statut professionnel. Il sera <strong style={{color:"#aaa"}}>définitivement supprimé</strong> après vérification. Seule l'équipe CROWDN y a accès.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {(form.profile==="fan" || form.profile==="nonfan") && (
+              <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:"16px 18px",display:"flex",flexDirection:"column",gap:12}}>
+                <p style={{fontSize:11,color:GOLD,fontWeight:700,letterSpacing:1}}>🎵 Vos 5 genres préférés</p>
+                <p style={{fontSize:10,color:"#888",lineHeight:1.6}}>Classez vos 5 genres du plus écouté au moins écouté. Cela définira votre profil Fan ou Non-fan selon les concerts assignés.</p>
+                {[1,2,3,4,5].map(n=>(
+                  <div key={n} style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{width:24,height:24,border:`1px solid ${GOLD}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:GOLD,flexShrink:0,fontFamily:"serif"}}>{n}</span>
+                    <select className="ifield" style={{cursor:"pointer"}} value={form.genres[n-1]||""} onChange={e=>{const g=[...form.genres];g[n-1]=e.target.value;setForm({...form,genres:g});}}>
+                      <option value="">Choisir un genre</option>
+                      {["Hip-Hop","Pop","Rock","R&B","Électro","Jazz","Metal","Classique","Reggae","Soul","Folk","Afrobeats","Flamenco","Punk","Latin","Blues"].map(g=>(
+                        <option key={g}>{g}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Motivation */}
+            <textarea className="ifield" rows={3}
+              placeholder="Pourquoi souhaitez-vous rejoindre le jury CROWDN ? (2-3 lignes)"
+              value={form.motivation} onChange={e=>setForm({...form,motivation:e.target.value})}
+              style={{resize:"vertical"}}/>
           </div>
-          <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3}} onClick={()=>setApplied(true)}>Envoyer ma candidature</button>
+          <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:form.name&&form.email&&form.profile?1:0.5}}
+            onClick={()=>form.name&&form.email&&form.profile&&setApplied(true)}>
+            Envoyer ma candidature
+          </button>
         </div>
       ) : (
         <div style={{background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.3)",padding:"40px 24px",textAlign:"center",animation:"fadeUp 0.5s ease"}}>
@@ -713,10 +835,59 @@ function AdminDash() {
         </div>
       )}
       {tab==="jurés" && (
-        <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"hidden"}}>
-          <table className="at"><thead><tr><th>Nom</th><th>Profil</th><th>Concerts notés</th><th>Statut</th></tr></thead>
-            <tbody>{[["Sophie L.","📰 Journaliste","14","Actif"],["Marc F.","🎶 Acteur musique","9","Actif"],["Elena R.","🎤 Fan du genre","11","Actif"],["Thomas V.","👁️ Non-fan","7","Inactif"]].map(([n,s,c,st])=>(<tr key={n}><td style={{fontWeight:600,color:"#eee"}}>{n}</td><td>{s}</td><td style={{color:GOLD,fontWeight:700}}>{c}</td><td><span style={{padding:"3px 10px",background:st==="Actif"?"rgba(76,200,100,0.1)":"rgba(255,255,255,0.04)",border:`1px solid ${st==="Actif"?"rgba(76,200,100,0.3)":"rgba(255,255,255,0.08)"}`,color:st==="Actif"?"#4CC864":"#888",fontSize:9,letterSpacing:1.5,fontWeight:600,textTransform:"uppercase",display:"inline-block"}}>{st}</span></td></tr>))}</tbody>
-          </table>
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
+            <p style={{fontSize:11,color:"#888"}}>Candidatures reçues — validation manuelle</p>
+            <div style={{display:"flex",gap:6}}>
+              {["Tous","En attente","Validé","Refusé"].map(f=>(
+                <button key={f} style={{padding:"4px 12px",background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",color:GOLD,fontSize:8,fontWeight:700,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{f}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"auto"}}>
+            <table className="at">
+              <thead><tr><th>Nom</th><th>Profil</th><th>Top genres</th><th>Justificatif</th><th>Document</th><th>Statut</th><th>Actions</th></tr></thead>
+              <tbody>
+                {[
+                  {n:"Sophie L.",p:"📰 Journaliste",g:"Pop · R&B · Soul",v:"Carte CCIJP #12453",doc:true,st:"Validé"},
+                  {n:"Marc F.",p:"🎶 Acteur musique",g:"Hip-Hop · Rap · Électro",v:"Manager — AZ Music",doc:true,st:"Validé"},
+                  {n:"Elena R.",p:"🎤 Fan du genre",g:"Flamenco · Latin · Jazz",v:"Top 5 genres déclarés",doc:false,st:"Validé"},
+                  {n:"Thomas V.",p:"👁️ Non-fan",g:"Rock · Metal · Punk",v:"Top 5 genres déclarés",doc:false,st:"En attente"},
+                  {n:"Karim B.",p:"📰 Journaliste",g:"Hip-Hop · R&B · Soul",v:"Carte CCIJP #98721",doc:true,st:"En attente"},
+                  {n:"Julie M.",p:"🎶 Acteur musique",g:"Pop · Électro · R&B",v:"Booker — Live Nation",doc:true,st:"En attente"},
+                ].map(({n,p,g,v,doc,st})=>(
+                  <tr key={n}>
+                    <td style={{fontWeight:600,color:"#eee"}}>{n}</td>
+                    <td style={{fontSize:11}}>{p}</td>
+                    <td style={{fontSize:10,color:"#888"}}>{g}</td>
+                    <td style={{fontSize:10,color:"#777"}}>{v}</td>
+                    <td>
+                      {doc ? (
+                        <div style={{display:"flex",gap:4}}>
+                          <button className="bo" style={{fontSize:8,padding:"3px 8px"}} onClick={()=>show("Document téléchargé ✓")}>📎 Voir</button>
+                          <button style={{background:"rgba(255,50,50,0.1)",border:"1px solid rgba(255,50,50,0.3)",color:"#FF5050",fontSize:8,padding:"3px 8px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>show("Document supprimé 🗑️")}>🗑️ Suppr.</button>
+                        </div>
+                      ) : (
+                        <span style={{fontSize:10,color:"#555"}}>—</span>
+                      )}
+                    </td>
+                    <td>
+                      <span style={{padding:"3px 10px",background:st==="Validé"?"rgba(76,200,100,0.1)":st==="En attente"?"rgba(201,168,76,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${st==="Validé"?"rgba(76,200,100,0.3)":st==="En attente"?"rgba(201,168,76,0.3)":"rgba(255,50,50,0.3)"}`,color:st==="Validé"?"#4CC864":st==="En attente"?GOLD:"#FF5050",fontSize:9,letterSpacing:1.5,fontWeight:600,textTransform:"uppercase",display:"inline-block"}}>{st}</span>
+                    </td>
+                    <td>
+                      <div style={{display:"flex",gap:6}}>
+                        {st==="En attente" && <>
+                          <button className="bp" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Juré validé ✓")}>✓ Valider</button>
+                          <button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Candidature refusée")}>✗ Refuser</button>
+                        </>}
+                        {st==="Validé" && <button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Email envoyé ✓")}>Contacter</button>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       {toast && <div className="toast">{toast}</div>}
