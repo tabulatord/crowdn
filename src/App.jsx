@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.REACT_APP_SUPABASE_URL || "https://orxyigdszptjptzenmpd.supabase.co",
+  process.env.REACT_APP_SUPABASE_ANON_KEY || "sb_publishable_1dCx6x7gqRJU0vKwZEs6oA_8aK_qB1e"
+);
 
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E8C96A";
@@ -675,7 +681,20 @@ function BecomeJury({ nav }) {
               style={{resize:"vertical"}}/>
           </div>
           <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:form.name&&form.email&&form.profile?1:0.5}}
-            onClick={()=>form.name&&form.email&&form.profile&&setApplied(true)}>
+            onClick={async()=>{
+              if(!form.name||!form.email||!form.profile) return;
+              try {
+                await supabase.from("jury_applications").insert({
+                  name: form.name,
+                  email: form.email,
+                  profile_type: form.profile,
+                  genre: form.genres.filter(g=>g).join(", "),
+                  motivation: form.motivation,
+                  status: "pending"
+                });
+              } catch(e) { console.log("Supabase insert error", e); }
+              setApplied(true);
+            }}>
             Envoyer ma candidature
           </button>
         </div>
@@ -693,34 +712,123 @@ function BecomeJury({ nav }) {
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 function Login({ nav, onLogin }) {
-  const [role, setRole] = useState("user");
+  const [mode, setMode] = useState("login"); // login | signup
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleLogin = async () => {
+    if (!email || !password) { setError("Email et mot de passe requis"); return; }
+    setLoading(true); setError("");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) { setError("Email ou mot de passe incorrect"); return; }
+
+      // Récupérer le rôle depuis la table profiles
+      const { data: profile } = await supabase
+        .from("profiles").select("role").eq("id", data.user.id).single();
+
+      onLogin(profile?.role || "user", data.user);
+      nav("home");
+    } catch(e) {
+      setError("Erreur de connexion");
+    } finally { setLoading(false); }
+  };
+
+  const handleSignup = async () => {
+    if (!email || !password || !name) { setError("Tous les champs sont requis"); return; }
+    if (password.length < 6) { setError("Mot de passe : 6 caractères minimum"); return; }
+    setLoading(true); setError("");
+    try {
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) { setError(error.message); return; }
+
+      // Créer le profil
+      if (data.user) {
+        await supabase.from("profiles").insert({
+          id: data.user.id,
+          name,
+          email,
+          role: "user"
+        });
+      }
+      setSuccess("Compte créé ! Vérifiez votre email pour confirmer.");
+    } catch(e) {
+      setError("Erreur lors de la création du compte");
+    } finally { setLoading(false); }
+  };
+
   return (
     <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"100px 20px 80px",background:`radial-gradient(ellipse at 50% 50%,rgba(201,168,76,0.05) 0%,transparent 60%),#0A0A0A`}}>
       <div style={{width:"100%",maxWidth:400}}>
+        {/* Logo */}
         <div style={{textAlign:"center",marginBottom:36}}>
           <Crown size={36}/>
-          <div style={{marginTop:14,marginBottom:4}}><span style={{fontWeight:800,fontSize:18,letterSpacing:6,color:GOLD}}>CROWD</span><span className="fd" style={{fontSize:18,fontWeight:700,color:GOLD}}>N</span></div>
+          <div style={{marginTop:14,marginBottom:4}}>
+            <span style={{fontWeight:800,fontSize:18,letterSpacing:6,color:GOLD}}>CROWD</span>
+            <span className="fd" style={{fontSize:18,fontWeight:700,color:GOLD}}>N</span>
+          </div>
           <p style={{fontSize:9,letterSpacing:3,color:"#666",textTransform:"uppercase"}}>Couronné par la Foule</p>
         </div>
-        <div style={{marginBottom:24}}>
-          <p className="sl" style={{marginBottom:12}}>Type de compte</p>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-            {[["user","Utilisateur","👤"],["jury","Juré","⭐"],["admin","Admin","🔑"]].map(([r,l,ic])=>(
-              <button key={r} onClick={()=>setRole(r)} style={{padding:"12px 8px",background:role===r?"rgba(201,168,76,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${role===r?GOLD:"rgba(201,168,76,0.12)"}`,color:role===r?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:9,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",textAlign:"center",transition:"all 0.2s"}}>
-                <div style={{fontSize:18,marginBottom:4}}>{ic}</div>{l}
-              </button>
-            ))}
+
+        {/* Toggle Login / Signup */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,marginBottom:28,border:"1px solid rgba(201,168,76,0.2)"}}>
+          {[["login","Connexion"],["signup","Créer un compte"]].map(([m,l])=>(
+            <button key={m} onClick={()=>{setMode(m);setError("");setSuccess("");}}
+              style={{padding:"12px",background:mode===m?"rgba(201,168,76,0.12)":"transparent",border:"none",color:mode===m?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s"}}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {/* Champs */}
+        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+          {mode==="signup" && (
+            <input className="ifield" placeholder="Votre nom complet"
+              value={name} onChange={e=>setName(e.target.value)}/>
+          )}
+          <input className="ifield" placeholder="votre@email.com" type="email"
+            value={email} onChange={e=>setEmail(e.target.value)}/>
+          <input className="ifield" type="password"
+            placeholder={mode==="signup"?"Mot de passe (6 caractères min.)":"Mot de passe"}
+            value={password} onChange={e=>setPassword(e.target.value)}/>
+        </div>
+
+        {/* Erreur / Succès */}
+        {error && (
+          <div style={{padding:"10px 14px",background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF6060",fontSize:11,marginBottom:16,letterSpacing:0.5}}>
+            ⚠️ {error}
           </div>
-        </div>
-        <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:22}}>
-          <input className="ifield" placeholder="votre@email.com"/>
-          <input className="ifield" type="password" placeholder="••••••••"/>
-        </div>
-        <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3}} onClick={()=>{onLogin(role);nav("home");}}>Connexion</button>
-        <p style={{textAlign:"center",marginTop:20,fontSize:11,color:"#555"}}>Pas encore membre ? <span style={{color:GOLD,cursor:"pointer",fontWeight:600}}>Créer un compte</span></p>
-        <div style={{marginTop:24,padding:"10px 14px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.12)",textAlign:"center"}}>
-          <p style={{fontSize:10,color:"#888"}}>Demo · Choisissez un rôle et cliquez connexion</p>
-        </div>
+        )}
+        {success && (
+          <div style={{padding:"10px 14px",background:"rgba(76,200,100,0.08)",border:"1px solid rgba(76,200,100,0.25)",color:"#4CC864",fontSize:11,marginBottom:16,letterSpacing:0.5}}>
+            ✅ {success}
+          </div>
+        )}
+
+        <button className="bp"
+          style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:loading?0.6:1}}
+          onClick={mode==="login"?handleLogin:handleSignup}
+          disabled={loading}>
+          {loading?"..." : mode==="login"?"Connexion":"Créer mon compte"}
+        </button>
+
+        {mode==="login" && (
+          <p style={{textAlign:"center",marginTop:16,fontSize:11,color:"#555"}}>
+            Mot de passe oublié ?{" "}
+            <span style={{color:GOLD,cursor:"pointer",fontWeight:600}}
+              onClick={async()=>{
+                if(!email){setError("Entrez votre email d'abord");return;}
+                await supabase.auth.resetPasswordForEmail(email);
+                setSuccess("Email de réinitialisation envoyé !");
+              }}>
+              Réinitialiser
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );
@@ -1043,8 +1151,70 @@ export default function App() {
   const [page,setPage]=useState("home");
   const [sel,setSel]=useState(null);
   const [role,setRole]=useState(null);
+  const [user,setUser]=useState(null);
   const [genreFilter,setGenreFilter]=useState(null);
   const [artistName,setArtistName]=useState(null);
+  const [upcomingData, setUpcomingData] = useState(UPCOMING);
+  const [pastData, setPastData] = useState(PAST);
+  const [loading, setLoading] = useState(true);
+
+  // Vérifier la session au chargement
+  useEffect(()=>{
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(session){
+        supabase.from("profiles").select("role,name").eq("id",session.user.id).single()
+          .then(({data:profile})=>{
+            setUser(session.user);
+            setRole(profile?.role||"user");
+          });
+      }
+      setLoading(false);
+    });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session)=>{
+      if(!session){setUser(null);setRole(null);}
+    });
+    return ()=>subscription.unsubscribe();
+  },[]);
+
+  // Charger les données depuis Supabase
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: upcoming } = await supabase
+          .from("upcoming_concerts")
+          .select("*")
+          .order("id");
+
+        const { data: past } = await supabase
+          .from("past_concerts")
+          .select("*")
+          .order("id");
+
+        if (upcoming && upcoming.length > 0) {
+          setUpcomingData(upcoming.map(c => ({
+            ...c,
+            daysLeft: daysUntil(c.date.split(" ")[0]+" "+c.date.split(" ")[1]+" "+c.date.split(" ")[2])
+          })));
+        }
+        if (past && past.length > 0) {
+          setPastData(past.map(c => ({
+            ...c,
+            juryQuote: c.jury_quote,
+            juryName: c.jury_name,
+            juryAvatar: c.jury_avatar,
+            juryHandle: c.jury_handle,
+            tiktokUrl: c.tiktok_url,
+            photos: ["📸","🎬","🌟"],
+          })));
+        }
+      } catch(e) {
+        console.log("Supabase non connecté, données locales utilisées");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const nav=(p,d)=>{
     setPage(p);
@@ -1075,17 +1245,17 @@ export default function App() {
         <div style={{display:"flex",gap:20,alignItems:"center"}}>
           {navItems.map(item=>(<button key={item.key} className={`nl ${page===item.key?"active":""}`} onClick={()=>nav(item.key)}>{item.label}</button>))}
           {role
-            ? <button className="bo" style={{fontSize:9,padding:"8px 16px"}} onClick={()=>{setRole(null);nav("home");}}>Déconnexion</button>
+            ? <button className="bo" style={{fontSize:9,padding:"8px 16px"}} onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}>Déconnexion</button>
             : <button className="bp" onClick={()=>nav("login")}>Connexion</button>
           }
         </div>
       </nav>
 
-      {page==="home"            && <HomePage nav={nav}/>}
-      {page==="login"           && <Login nav={nav} onLogin={r=>setRole(r)}/>}
-      {page==="upcoming"        && <UpcomingPage nav={nav} initialGenre={genreFilter}/>}
+      {page==="home"            && <HomePage nav={nav} upcoming={upcomingData} past={pastData}/>}
+      {page==="login"           && <Login nav={nav} onLogin={(r,u)=>{setRole(r);setUser(u);}}/>}
+      {page==="upcoming"        && <UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData}/>}
       {page==="upcoming-detail" && <UpcomingDetail c={sel} nav={nav}/>}
-      {page==="past"            && <PastPage nav={nav}/>}
+      {page==="past"            && <PastPage nav={nav} concerts={pastData}/>}
       {page==="past-detail"     && <PastDetail c={sel} nav={nav}/>}
       {page==="become-jury"     && <BecomeJury nav={nav}/>}
       {page==="how-it-works"    && <HowItWorks nav={nav}/>}
