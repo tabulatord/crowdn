@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.REACT_APP_SUPABASE_URL || "https://orxyigdszptjptzenmpd.supabase.co",
+  process.env.REACT_APP_SUPABASE_ANON_KEY || "sb_publishable_1dCx6x7gqRJU0vKwZEs6oA_8aK_qB1e"
+);
 
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E8C96A";
@@ -675,7 +681,20 @@ function BecomeJury({ nav }) {
               style={{resize:"vertical"}}/>
           </div>
           <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:form.name&&form.email&&form.profile?1:0.5}}
-            onClick={()=>form.name&&form.email&&form.profile&&setApplied(true)}>
+            onClick={async()=>{
+              if(!form.name||!form.email||!form.profile) return;
+              try {
+                await supabase.from("jury_applications").insert({
+                  name: form.name,
+                  email: form.email,
+                  profile_type: form.profile,
+                  genre: form.genres.filter(g=>g).join(", "),
+                  motivation: form.motivation,
+                  status: "pending"
+                });
+              } catch(e) { console.log("Supabase insert error", e); }
+              setApplied(true);
+            }}>
             Envoyer ma candidature
           </button>
         </div>
@@ -1045,6 +1064,49 @@ export default function App() {
   const [role,setRole]=useState(null);
   const [genreFilter,setGenreFilter]=useState(null);
   const [artistName,setArtistName]=useState(null);
+  const [upcomingData, setUpcomingData] = useState(UPCOMING);
+  const [pastData, setPastData] = useState(PAST);
+  const [loading, setLoading] = useState(true);
+
+  // Charger les données depuis Supabase
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: upcoming } = await supabase
+          .from("upcoming_concerts")
+          .select("*")
+          .order("id");
+
+        const { data: past } = await supabase
+          .from("past_concerts")
+          .select("*")
+          .order("id");
+
+        if (upcoming && upcoming.length > 0) {
+          setUpcomingData(upcoming.map(c => ({
+            ...c,
+            daysLeft: daysUntil(c.date.split(" ")[0]+" "+c.date.split(" ")[1]+" "+c.date.split(" ")[2])
+          })));
+        }
+        if (past && past.length > 0) {
+          setPastData(past.map(c => ({
+            ...c,
+            juryQuote: c.jury_quote,
+            juryName: c.jury_name,
+            juryAvatar: c.jury_avatar,
+            juryHandle: c.jury_handle,
+            tiktokUrl: c.tiktok_url,
+            photos: ["📸","🎬","🌟"],
+          })));
+        }
+      } catch(e) {
+        console.log("Supabase non connecté, données locales utilisées");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const nav=(p,d)=>{
     setPage(p);
@@ -1081,11 +1143,11 @@ export default function App() {
         </div>
       </nav>
 
-      {page==="home"            && <HomePage nav={nav}/>}
+      {page==="home"            && <HomePage nav={nav} upcoming={upcomingData} past={pastData}/>}
       {page==="login"           && <Login nav={nav} onLogin={r=>setRole(r)}/>}
-      {page==="upcoming"        && <UpcomingPage nav={nav} initialGenre={genreFilter}/>}
+      {page==="upcoming"        && <UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData}/>}
       {page==="upcoming-detail" && <UpcomingDetail c={sel} nav={nav}/>}
-      {page==="past"            && <PastPage nav={nav}/>}
+      {page==="past"            && <PastPage nav={nav} concerts={pastData}/>}
       {page==="past-detail"     && <PastDetail c={sel} nav={nav}/>}
       {page==="become-jury"     && <BecomeJury nav={nav}/>}
       {page==="how-it-works"    && <HowItWorks nav={nav}/>}
