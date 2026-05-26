@@ -124,8 +124,7 @@ const PAST_DEFAULT = [
 const JURY_TYPES = [
   {icon:"📰",type:"Journaliste",tag:"Officiel",desc:"Critique musical ou journaliste culturel avec expérience live reconnue.",color:"#E8C96A"},
   {icon:"🎶",type:"Acteur de la musique",tag:"Officiel",desc:"Professionnel de l'industrie : manager, tourneur, directeur artistique, booker.",color:"#E8C96A"},
-  {icon:"🎤",type:"Fan du genre",tag:"Communauté",desc:"Fan passionné et expert du genre évalué. Connaissance profonde de l'artiste.",color:"#C9A84C"},
-  {icon:"👁️",type:"Non-fan du genre",tag:"Communauté",desc:"Regard neuf et objectif. Juge uniquement ce qu'il voit et ressent.",color:"#C9A84C"},
+  {icon:"🎤",type:"Fan de musique live",tag:"Communauté",desc:"Fan passionné du live. Tu déclares tes 5 genres préférés — CROWDN détermine si tu es Fan ou Non-fan selon chaque concert assigné.",color:"#C9A84C"},
 ];
 
 const CRITERIA = [
@@ -499,7 +498,7 @@ function BecomeJury({nav}) {
         <div style={{background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.2)",padding:"16px 20px",maxWidth:540,margin:"0 auto",display:"flex",alignItems:"center",gap:12}}>
           <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
           <p style={{fontSize:12,color:"rgba(245,240,232,0.75)",lineHeight:1.7,textAlign:"left"}}>
-            Chaque concert est évalué par un panel mixte de 4 types de jurés. <strong style={{color:GOLD}}>Les votes individuels restent privés.</strong> Seul le résultat collectif est publié.
+            Chaque concert est évalué par un panel de 3 types de jurés. <strong style={{color:GOLD}}>Les votes individuels restent privés.</strong> Seul le résultat collectif est publié. CROWDN détermine si chaque fan est Fan ou Non-fan selon ses genres déclarés.
           </p>
         </div>
       </div>
@@ -722,7 +721,7 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
             <div className="gd"/>
             <p className="sl" style={{marginTop:8}}>Ton profil de juré</p>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[["journalist","📰 Journaliste"],["music_pro","🎶 Acteur musique"],["fan","🎤 Fan du genre"],["nonfan","👁️ Non-fan"]].map(([v,l])=>(
+              {[["journalist","📰 Journaliste"],["music_pro","🎶 Acteur musique"],["fan","🎤 Fan de musique live"]].map(([v,l])=>(
                 <button key={v} onClick={()=>setJuryProfile(v)} style={{padding:"10px 8px",background:juryProfile===v?"rgba(201,168,76,0.12)":"rgba(255,255,255,0.03)",border:`1px solid ${juryProfile===v?GOLD:"rgba(201,168,76,0.12)"}`,color:juryProfile===v?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:9,fontWeight:700,letterSpacing:1,textTransform:"uppercase",transition:"all 0.2s"}}>{l}</button>
               ))}
             </div>
@@ -764,7 +763,7 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
                 </div>
               </div>
             )}
-            {(juryProfile==="fan"||juryProfile==="nonfan")&&(
+            {juryProfile==="fan"&&(
               <div style={{display:"flex",flexDirection:"column",gap:10,padding:"14px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)"}}>
                 <p style={{fontSize:11,color:GOLD,fontWeight:700}}>🎵 Tes 5 genres préférés</p>
                 <p style={{fontSize:10,color:"#888",lineHeight:1.6}}>Du plus écouté au moins écouté — définit ton profil Fan ou Non-fan.</p>
