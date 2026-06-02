@@ -1034,6 +1034,7 @@ www.cnil.fr`},
     </div>
   );
 }
+function JuryDash() {
   const [scores,setScores]=useState([7,8,7,9,8,8]);
   const [comment,setComment]=useState("");
   const [submitted,setSubmitted]=useState(false);
