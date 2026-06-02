@@ -3,8 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL || "https://orxyigdszptjptzenmpd.supabase.co",
-  process.env.REACT_APP_SUPABASE_ANON_KEY || "sb_publishable_1dCx6x7gqRJU0vKwZEs6oA_8aK_qB1e"
-);
+  process.env.REACT_APP_SUPABASE_ANON_KEY ||
 
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E8C96A";
