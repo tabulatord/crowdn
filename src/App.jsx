@@ -194,6 +194,12 @@ function Crown({size=40}) {
   );
 }
 
+function ArtistImg({name,fallback,size=44,images={}}) {
+  const url=images[name];
+  if(url) return <img src={url} alt={name} style={{width:size,height:size,objectFit:"cover",borderRadius:size>60?"0":"50%",border:"1px solid rgba(201,168,76,0.2)"}}/>;
+  return <span style={{fontSize:size*0.6,display:"flex",alignItems:"center",justifyContent:"center",width:size,height:size}}>{fallback||"🎵"}</span>;
+}
+
 function GenreStrip({onGenreClick}) {
   const doubled = [...GENRES,...GENRES];
   return (
@@ -219,7 +225,7 @@ function GenreStrip({onGenreClick}) {
   );
 }
 
-function PastCard({c,idx,onClick}) {
+function PastCard({c,idx,onClick,artistImages={}}) {
   return (
     <div className="pc" style={{animation:`fadeUp 0.5s ${idx*0.12}s ease both`,opacity:0}} onClick={onClick}>
       <div style={{display:"flex",alignItems:"stretch"}}>
@@ -227,7 +233,7 @@ function PastCard({c,idx,onClick}) {
         <div style={{flex:1,padding:"18px 20px"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
-              <span style={{fontSize:30}}>{c.img}</span>
+              <ArtistImg name={c.artist} fallback={c.img} size={36} images={artistImages}/>
               <div>
                 <h3 style={{fontSize:15,fontWeight:700,letterSpacing:0.5}}>{c.artist}</h3>
                 <p style={{fontSize:11,color:"#888",marginTop:2}}>{c.date} · {c.city}</p>
@@ -257,7 +263,7 @@ function PastCard({c,idx,onClick}) {
   );
 }
 
-function HomePage({nav,upcoming,past}) {
+function HomePage({nav,upcoming,past,artistImages={}}) {
   const U = upcoming||UPCOMING_DEFAULT;
   const P = past||PAST_DEFAULT;
   return (
@@ -300,7 +306,7 @@ function HomePage({nav,upcoming,past}) {
               <div key={c.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)",cursor:"pointer",transition:"all 0.2s",animation:`fadeUp 0.5s ${i*0.1}s ease both`,opacity:0}} onClick={()=>nav("upcoming-detail",c)}
                 onMouseOver={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.35)"}
                 onMouseOut={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.1)"}>
-                <span style={{fontSize:28,flexShrink:0}}>{c.img}</span>
+                <ArtistImg name={c.artist} fallback={c.img} size={36} images={artistImages}/>
                 <div style={{flex:1,minWidth:0}}>
                   <p style={{fontWeight:700,fontSize:14,marginBottom:2}}>{c.artist}</p>
                   <p style={{fontSize:11,color:"#888",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.date} · {c.venue}</p>
@@ -327,8 +333,8 @@ function HomePage({nav,upcoming,past}) {
         <div className="concerts-grid" style={{display:"grid",gap:14}}>
           {U.slice(0,4).map((c,i)=>(
             <div key={c.id} className="cc" style={{animation:`fadeUp 0.5s ${i*0.1}s ease both`,opacity:0}} onClick={()=>nav("upcoming-detail",c)}>
-              <div style={{height:100,background:"linear-gradient(135deg,rgba(201,168,76,0.07),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:44,position:"relative"}}>
-                {c.img}
+              <div style={{height:100,background:"linear-gradient(135deg,rgba(201,168,76,0.07),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+                <ArtistImg name={c.artist} fallback={c.img} size={80} images={artistImages}/>
                 <div style={{position:"absolute",top:10,left:12}}><span className="ub"><span className="ld"/>{c.daysLeft}j</span></div>
                 <div style={{position:"absolute",top:10,right:12}}><GenreIcon name={c.genre} size={16}/></div>
               </div>
@@ -354,14 +360,14 @@ function HomePage({nav,upcoming,past}) {
         </div>
         {/* Desktop: 2 colonnes / Mobile: 1 colonne */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(420px,1fr))",gap:14}}>
-          {P.slice(0,2).map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)}/>)}
+          {P.slice(0,2).map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)} artistImages={artistImages}/>)}
         </div>
       </div>
     </div>
   );
 }
 
-function UpcomingPage({nav,initialGenre,concerts}) {
+function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
   const [activeGenre,setActiveGenre]=useState(initialGenre||"Tous");
   const U=concerts||UPCOMING_DEFAULT;
   const allGenres=["Tous",...Array.from(new Set(U.map(c=>c.genre)))];
@@ -401,8 +407,8 @@ function UpcomingPage({nav,initialGenre,concerts}) {
           <div className="concerts-grid" style={{display:"grid",gap:16}}>
             {filtered.map((c,i)=>(
               <div key={c.id} className="cc" style={{animation:`fadeUp 0.4s ${i*0.06}s ease both`,opacity:0}} onClick={()=>nav("upcoming-detail",c)}>
-                <div style={{height:110,background:"linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:44,position:"relative"}}>
-                  {c.img}
+                <div style={{height:110,background:"linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+                  <ArtistImg name={c.artist} fallback={c.img} size={80} images={artistImages}/>
                   <div style={{position:"absolute",top:10,left:12}}><span className="ub"><span className="ld"/>{c.daysLeft}j</span></div>
                   <div style={{position:"absolute",top:10,right:12}}><GenreIcon name={c.genre} size={16}/></div>
                 </div>
@@ -425,7 +431,7 @@ function UpcomingPage({nav,initialGenre,concerts}) {
   );
 }
 
-function UpcomingDetail({c,nav}) {
+function UpcomingDetail({c,nav,artistImages={}}) {
   if(!c) return null;
   return (
     <div style={{paddingBottom:80,paddingTop:72}}>
@@ -433,7 +439,7 @@ function UpcomingDetail({c,nav}) {
         {/* Left */}
         <div style={{textAlign:"center"}}>
           <span className="ub" style={{marginBottom:20,display:"inline-flex"}}><span className="ld"/>{c.daysLeft} jours restants</span>
-          <div style={{fontSize:96,margin:"24px 0 20px"}}>{c.img}</div>
+          <div style={{margin:"24px 0 20px"}}><ArtistImg name={c.artist} fallback={c.img} size={120} images={artistImages}/></div>
           <h1 className="fd" style={{fontSize:"clamp(30px,5vw,52px)",fontWeight:400,letterSpacing:3,marginBottom:8,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
           <p style={{fontSize:13,color:"#888",marginBottom:12}}>{c.date} · {c.city} · {c.venue}</p>
           <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",alignItems:"center"}}>
@@ -466,7 +472,7 @@ function UpcomingDetail({c,nav}) {
   );
 }
 
-function PastPage({nav,concerts}) {
+function PastPage({nav,concerts,artistImages={}}) {
   const [activeGenre,setActiveGenre]=useState("Tous");
   const P=concerts||PAST_DEFAULT;
   const allGenres=["Tous",...Array.from(new Set(P.map(c=>c.genre)))];
@@ -500,7 +506,7 @@ function PastPage({nav,concerts}) {
             ))}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(400px,1fr))",gap:16}}>
-            {filtered.map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)}/>)}
+            {filtered.map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)} artistImages={artistImages}/>)}
           </div>
         </div>
       </div>
@@ -508,12 +514,12 @@ function PastPage({nav,concerts}) {
   );
 }
 
-function PastDetail({c,nav}) {
+function PastDetail({c,nav,artistImages={}}) {
   if(!c) return null;
   return (
     <div style={{paddingBottom:80}}>
       <div style={{padding:"100px 20px 40px",textAlign:"center",background:"linear-gradient(to bottom,rgba(201,168,76,0.04),transparent)"}}>
-        <div style={{fontSize:64,marginBottom:16}}>{c.img}</div>
+        <div style={{marginBottom:16}}><ArtistImg name={c.artist} fallback={c.img} size={100} images={artistImages}/></div>
         <p className="sl" style={{marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><GenreIcon name={c.genre} size={16}/>{c.genre}</p>
         <h1 className="fd" style={{fontSize:"clamp(28px,6vw,48px)",fontWeight:400,letterSpacing:3,marginBottom:8,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
         <p style={{fontSize:13,color:"#888",marginBottom:16}}>{c.date} · {c.city} · {c.venue}</p>
@@ -1128,7 +1134,7 @@ function JuryDash({user}) {
       <p className="sl" style={{marginBottom:12}}>Concerts assignés</p>
       {UPCOMING_DEFAULT.slice(0,3).map(c=>(
         <div key={c.id} style={{background:BG2,border:"1px solid rgba(201,168,76,0.1)",padding:"14px 18px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:22}}>{c.img}</span><div><p style={{fontWeight:700,fontSize:13}}>{c.artist}</p><p style={{fontSize:11,color:"#888",display:"flex",alignItems:"center",gap:4}}>{c.date} · {c.city} · <GenreIcon name={c.genre} size={12}/>{c.genre}</p></div></div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}><ArtistImg name={c.artist} fallback={c.img} size={28} images={{}}/><div><p style={{fontWeight:700,fontSize:13}}>{c.artist}</p><p style={{fontSize:11,color:"#888",display:"flex",alignItems:"center",gap:4}}>{c.date} · {c.city} · <GenreIcon name={c.genre} size={12}/>{c.genre}</p></div></div>
           <span className="ub" style={{fontSize:8}}><span className="ld"/>{c.daysLeft}j</span>
         </div>
       ))}
@@ -1321,6 +1327,7 @@ export default function App() {
   const [pastData,setPastData]=useState(PAST_DEFAULT);
   const [wantsJuryLogin,setWantsJuryLogin]=useState(false);
   const [cookieConsent,setCookieConsent]=useState(()=>localStorage.getItem("crowdn_cookies")||null);
+  const [artistImages,setArtistImages]=useState({});
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{
@@ -1346,6 +1353,27 @@ export default function App() {
     }
     fetchData();
   },[]);
+
+  useEffect(()=>{
+    async function fetchArtistImages(){
+      const allArtists=[...new Set([...upcomingData,...pastData].map(c=>c.artist))];
+      const cached=JSON.parse(localStorage.getItem("crowdn_artist_images")||"{}");
+      const toFetch=allArtists.filter(a=>!cached[a]);
+      if(Object.keys(cached).length>0)setArtistImages(cached);
+      for(let i=0;i<toFetch.length;i++){
+        try{
+          const res=await fetch("/api/spotify?artist="+encodeURIComponent(toFetch[i]));
+          if(res.ok){
+            const data=await res.json();
+            if(data.image){cached[toFetch[i]]=data.image;setArtistImages({...cached});}
+          }
+        }catch(e){}
+        if(i%5===4)await new Promise(r=>setTimeout(r,500));
+      }
+      localStorage.setItem("crowdn_artist_images",JSON.stringify(cached));
+    }
+    if(upcomingData.length>0||pastData.length>0)fetchArtistImages();
+  },[upcomingData,pastData]);
 
   const nav=(p,d)=>{
     if(d&&d.wantsJury){setWantsJuryLogin(true);setPage("login");window.scrollTo({top:0,behavior:"smooth"});return;}
@@ -1387,12 +1415,12 @@ export default function App() {
         </div>
       </nav>
 
-      {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData}/>}
+      {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData} artistImages={artistImages}/>}
       {page==="login"&&<Login nav={nav} onLogin={(r,u)=>{setRole(r);setUser(u);setWantsJuryLogin(false);if(r==="jury")nav("jury-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
-      {page==="upcoming"&&<UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData}/>}
-      {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav}/>}
-      {page==="past"&&<PastPage nav={nav} concerts={pastData}/>}
-      {page==="past-detail"&&<PastDetail c={sel} nav={nav}/>}
+      {page==="upcoming"&&<UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData} artistImages={artistImages}/>}
+      {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages}/>}
+      {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
+      {page==="past-detail"&&<PastDetail c={sel} nav={nav} artistImages={artistImages}/>}
       {page==="become-jury"&&<BecomeJury nav={nav}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav}/>}
