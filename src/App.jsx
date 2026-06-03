@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -472,8 +472,108 @@ function UpcomingDetail({c,nav,artistImages={}}) {
   );
 }
 
+// ─── MOMENTS ─────────────────────────────────────────────────────────────────
+const MOMENTS_DATA = [
+  {id:1,artist:"Billie Eilish",concert:"Accor Arena · Paris",date:"10 Juin 2025",caption:"Ce soir Paris m'appartient 🖤",video:"https://videos.pexels.com/video-files/3015510/3015510-hd_1920_1080_24fps.mp4",tag:"Artist",views:"124K",likes:"8.2K"},
+  {id:2,artist:"Ninho",concert:"Stade de France · Paris",date:"2 Mai 2025",caption:"Premier rappeur français solo au Stade de France 🏆",video:"https://videos.pexels.com/video-files/3015488/3015488-hd_1920_1080_24fps.mp4",tag:"Jury",views:"89K",likes:"12.4K"},
+  {id:3,artist:"DJ Snake",concert:"Stade de France · Paris",date:"10 Mai 2025",caption:"Le feu d'artifice final... frissons 🐍🔥",video:"https://videos.pexels.com/video-files/2022395/2022395-hd_1920_1080_30fps.mp4",tag:"Fan",views:"45K",likes:"3.1K"},
+  {id:4,artist:"Slimane",concert:"Accor Arena · Paris",date:"8 Avr 2025",caption:"Chaque note, chaque silence 🎶",video:"https://videos.pexels.com/video-files/2959990/2959990-hd_1920_1080_24fps.mp4",tag:"Artist",views:"67K",likes:"9.8K"},
+];
+
+function MomentThumb({m,onClick,artistImages}) {
+  const vRef=useRef(null);
+  useEffect(()=>{if(vRef.current)vRef.current.currentTime=2;},[]);
+  return (
+    <div style={{flexShrink:0,cursor:"pointer",textAlign:"center"}} onClick={onClick}>
+      <div style={{width:68,height:68,borderRadius:"50%",padding:2,background:"linear-gradient(135deg,#8B6914,#C9A84C,#E8C96A)",marginBottom:5}}>
+        <div style={{width:"100%",height:"100%",borderRadius:"50%",overflow:"hidden",border:"2px solid #0A0A0A",position:"relative",background:"#111"}}>
+          <video ref={vRef} src={m.video} style={{width:"100%",height:"100%",objectFit:"cover"}} muted playsInline preload="metadata"/>
+          <div style={{position:"absolute",bottom:0,right:0,width:16,height:16,borderRadius:"50%",background:"#0A0A0A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:8}}>
+            {m.tag==="Artist"?"🎤":m.tag==="Jury"?"⭐":"🔥"}
+          </div>
+        </div>
+      </div>
+      <p style={{fontSize:8,fontWeight:600,color:"#aaa",width:68,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.artist.split(" ")[0]}</p>
+    </div>
+  );
+}
+
+function MomentPlayer({m,onClose,onPrev,onNext,hasPrev,hasNext}) {
+  const vRef=useRef(null);
+  const [playing,setPlaying]=useState(true);
+  const [progress,setProgress]=useState(0);
+  const [liked,setLiked]=useState(false);
+  const [muted,setMuted]=useState(false);
+
+  useEffect(()=>{
+    const v=vRef.current;if(!v)return;
+    v.currentTime=0;v.play().catch(()=>{});setPlaying(true);setProgress(0);
+    const onTime=()=>setProgress((v.currentTime/v.duration)*100||0);
+    v.addEventListener("timeupdate",onTime);
+    return()=>v.removeEventListener("timeupdate",onTime);
+  },[m]);
+
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:500,background:"#000",display:"flex",justifyContent:"center"}} onClick={()=>{const v=vRef.current;if(!v)return;if(playing)v.pause();else v.play();setPlaying(!playing);}}>
+      <div style={{position:"relative",height:"100vh",maxWidth:400,width:"100%",overflow:"hidden"}}>
+        <video ref={vRef} src={m.video} style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} loop playsInline muted={muted} autoPlay/>
+        <div style={{position:"absolute",top:0,left:0,right:0,height:"25%",background:"linear-gradient(to bottom,rgba(0,0,0,0.7),transparent)",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"60%",background:"linear-gradient(to top,rgba(0,0,0,0.95),transparent)",pointerEvents:"none"}}/>
+
+        {/* Top bar */}
+        <div style={{position:"absolute",top:16,left:16,right:16,display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10}} onClick={e=>e.stopPropagation()}>
+          <button onClick={onClose} style={{background:"rgba(0,0,0,0.5)",border:"1px solid rgba(255,255,255,0.2)",color:"#eee",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>←</button>
+          <span style={{padding:"3px 9px",background:"linear-gradient(135deg,#8B6914,#C9A84C)",color:"#000",fontSize:7,fontWeight:800,letterSpacing:2,textTransform:"uppercase"}}>♛ CROWDN Exclusive</span>
+          <button onClick={()=>setMuted(!muted)} style={{background:"rgba(0,0,0,0.5)",border:"1px solid rgba(255,255,255,0.2)",color:"#eee",width:36,height:36,borderRadius:"50%",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}}>{muted?"🔇":"🔊"}</button>
+        </div>
+
+        {/* Side actions */}
+        <div style={{position:"absolute",right:16,bottom:140,display:"flex",flexDirection:"column",gap:20,alignItems:"center",zIndex:10}} onClick={e=>e.stopPropagation()}>
+          <button onClick={()=>setLiked(!liked)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+            <div style={{width:44,height:44,borderRadius:"50%",border:`1.5px solid ${liked?"#C9A84C":"rgba(255,255,255,0.3)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,background:liked?"rgba(201,168,76,0.2)":"rgba(0,0,0,0.3)",color:liked?"#E8C96A":"#fff"}}>{liked?"♥":"♡"}</div>
+            <span style={{fontSize:10,color:"rgba(255,255,255,0.8)",fontWeight:600,fontFamily:"'Montserrat',sans-serif"}}>{m.likes}</span>
+          </button>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+            <div style={{width:44,height:44,borderRadius:"50%",border:"1.5px solid rgba(255,255,255,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,background:"rgba(0,0,0,0.3)"}}>💬</div>
+            <span style={{fontSize:10,color:"rgba(255,255,255,0.8)",fontWeight:600,fontFamily:"'Montserrat',sans-serif"}}>124</span>
+          </div>
+        </div>
+
+        {/* Bottom info */}
+        <div style={{position:"absolute",bottom:80,left:16,right:72,zIndex:10}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <p style={{fontSize:15,fontWeight:700,color:"#fff"}}>{m.artist}</p>
+            <div style={{width:16,height:16,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"#000",fontWeight:900}}>✓</div>
+          </div>
+          <p style={{fontSize:11,color:"rgba(255,255,255,0.7)",marginBottom:6}}>📍 {m.concert} · {m.date}</p>
+          <p style={{fontSize:12,color:"rgba(255,255,255,0.9)",lineHeight:1.6,marginBottom:8}}>{m.caption}</p>
+          <div style={{display:"flex",gap:6}}>
+            <span style={{padding:"3px 9px",border:"1px solid rgba(201,168,76,0.35)",color:GOLD,fontSize:7,fontWeight:700,letterSpacing:2,textTransform:"uppercase"}}>{m.tag} Moment</span>
+            <span style={{padding:"3px 9px",border:"1px solid rgba(201,168,76,0.35)",color:GOLD,fontSize:7,fontWeight:700,letterSpacing:2,textTransform:"uppercase"}}>{m.views} vues</span>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div style={{position:"absolute",bottom:68,left:16,right:16,height:2,background:"rgba(255,255,255,0.2)",cursor:"pointer",zIndex:10}} onClick={e=>{e.stopPropagation();const v=vRef.current;if(!v)return;const r=e.currentTarget.getBoundingClientRect();v.currentTime=((e.clientX-r.left)/r.width)*v.duration;}}>
+          <div style={{height:"100%",width:`${progress}%`,background:"linear-gradient(to right,#8B6914,#E8C96A)",transition:"width 0.1s"}}/>
+        </div>
+
+        {/* Nav */}
+        <div style={{position:"absolute",bottom:16,left:16,right:16,display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10}} onClick={e=>e.stopPropagation()}>
+          <button onClick={onPrev} disabled={!hasPrev} style={{background:"rgba(0,0,0,0.5)",border:"1px solid rgba(255,255,255,0.15)",color:hasPrev?"#eee":"#444",padding:"8px 16px",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:hasPrev?"pointer":"default"}}>← Préc</button>
+          <div style={{display:"flex",gap:4}}>
+            {MOMENTS_DATA.map((_,i)=>(<div key={i} style={{width:i===MOMENTS_DATA.indexOf(m)?16:5,height:5,borderRadius:3,background:i===MOMENTS_DATA.indexOf(m)?GOLD:"rgba(255,255,255,0.3)",transition:"all 0.3s"}}/>))}
+          </div>
+          <button onClick={onNext} disabled={!hasNext} style={{background:"rgba(0,0,0,0.5)",border:"1px solid rgba(255,255,255,0.15)",color:hasNext?"#eee":"#444",padding:"8px 16px",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:hasNext?"pointer":"default"}}>Suiv →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PastPage({nav,concerts,artistImages={}}) {
   const [activeGenre,setActiveGenre]=useState("Tous");
+  const [momentIdx,setMomentIdx]=useState(null);
   const P=concerts||PAST_DEFAULT;
   const allGenres=["Tous",...Array.from(new Set(P.map(c=>c.genre)))];
   const filtered=activeGenre==="Tous"?P:P.filter(c=>c.genre===activeGenre);
@@ -508,8 +608,45 @@ function PastPage({nav,concerts,artistImages={}}) {
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(400px,1fr))",gap:16}}>
             {filtered.map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)} artistImages={artistImages}/>)}
           </div>
+
+          {/* ─── MOMENTS SECTION ─── */}
+          <div style={{padding:"32px 0",borderTop:"1px solid rgba(201,168,76,0.08)",borderBottom:"1px solid rgba(201,168,76,0.08)",marginTop:32}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                  <div style={{width:6,height:6,borderRadius:"50%",background:GOLD,animation:"pulse 2s infinite"}}/>
+                  <p style={{fontSize:9,color:GOLD,letterSpacing:4,textTransform:"uppercase",fontWeight:700}}>Moments</p>
+                </div>
+                <h3 className="fd" style={{fontSize:"clamp(16px,3vw,22px)",fontWeight:400,letterSpacing:2}}>Moments exclusifs</h3>
+                <p style={{fontSize:10,color:"#666",marginTop:3}}>Vidéos live · Uniquement sur CROWDN</p>
+              </div>
+              <span style={{padding:"4px 12px",background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",fontSize:8,color:GOLD,fontWeight:700,letterSpacing:2,textTransform:"uppercase"}}>🔒 Exclusif</span>
+            </div>
+            <div style={{display:"flex",gap:14,overflowX:"auto",paddingBottom:8,scrollbarWidth:"none"}}>
+              {MOMENTS_DATA.map((m,i)=>(
+                <MomentThumb key={m.id} m={m} artistImages={artistImages} onClick={()=>setMomentIdx(i)}/>
+              ))}
+              <div style={{flexShrink:0,textAlign:"center",cursor:"pointer",opacity:0.5}}>
+                <div style={{width:68,height:68,borderRadius:"50%",border:"2px dashed rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,background:"rgba(201,168,76,0.03)",marginBottom:5}}>＋</div>
+                <p style={{fontSize:8,color:"#555",width:68}}>Partager</p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
+
+      {/* Fullscreen Moment Player */}
+      {momentIdx!==null&&(
+        <MomentPlayer
+          m={MOMENTS_DATA[momentIdx]}
+          onClose={()=>setMomentIdx(null)}
+          onPrev={()=>setMomentIdx(i=>Math.max(0,i-1))}
+          onNext={()=>setMomentIdx(i=>Math.min(MOMENTS_DATA.length-1,i+1))}
+          hasPrev={momentIdx>0}
+          hasNext={momentIdx<MOMENTS_DATA.length-1}
+        />
+      )}
     </div>
   );
 }
