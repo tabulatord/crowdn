@@ -3,8 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL || "https://orxyigdszptjptzenmpd.supabase.co",
-  process.env.REACT_APP_SUPABASE_ANON_KEY
+  process.env.REACT_APP_SUPABASE_ANON_KEY || "sb_publishable_1dCx6x7gqRJU0vKwZEs6oA_8aK_qB1e"
 );
+
 const GOLD = "#C9A84C";
 const GOLD_LIGHT = "#E8C96A";
 const GOLD_DARK = "#8B6914";
@@ -704,10 +705,10 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
   const [juryProfile,setJuryProfile]=useState("");
   const [pressCard,setPressCard]=useState("");
   const [media,setMedia]=useState("");
-  const [pressDoc,setPressDoc]=useState("");
+  const [pressDoc,setPressDoc]=useState(null);
   const [proRole,setProRole]=useState("");
   const [company,setCompany]=useState("");
-  const [proDoc,setProDoc]=useState("");
+  const [proDoc,setProDoc]=useState(null);
   const [genres,setGenres]=useState(["","","","",""]);
   const [motivation,setMotivation]=useState("");
 
@@ -742,11 +743,21 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
   const handleProfileComplete=async()=>{
     setLoading(true);
     try{
+      let docUrl="";
+      const docFile=pressDoc||proDoc;
+      if(wantsJury&&docFile&&newUser){
+        const ext=docFile.name.split(".").pop();
+        const path=`${newUser.id}/${Date.now()}.${ext}`;
+        const{error:uploadError}=await supabase.storage.from("jury-documents").upload(path,docFile);
+        if(uploadError){console.error("Upload error:",uploadError);}
+        else{docUrl=path;}
+      }
       if(wantsJury){
         await supabase.from("jury_applications").insert({
           name,email,profile_type:juryProfile,
           genre:genres.filter(g=>g).join(", "),
-          motivation,status:"pending"
+          motivation,status:"pending",
+          document_url:docUrl||null
         });
       }
       setSuccess("Profil créé ! Vérifie ton email pour confirmer ton compte.");
@@ -829,9 +840,9 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
                 <input className="ifield" placeholder="Numéro carte de presse CCIJP" value={pressCard} onChange={e=>setPressCard(e.target.value)}/>
                 <input className="ifield" placeholder="Média / Publication" value={media} onChange={e=>setMedia(e.target.value)}/>
                 <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px",border:`2px dashed ${pressDoc?"rgba(76,200,100,0.5)":"rgba(201,168,76,0.3)"}`,background:pressDoc?"rgba(76,200,100,0.05)":"rgba(201,168,76,0.02)",cursor:"pointer"}}>
-                  <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setPressDoc(e.target.files[0]?.name||"")}/>
+                  <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setPressDoc(e.target.files[0]||null)}/>
                   <span style={{fontSize:18}}>{pressDoc?"✅":"📎"}</span>
-                  <div><p style={{fontSize:11,fontWeight:600,color:pressDoc?"#4CC864":GOLD}}>{pressDoc||"Photo carte de presse"}</p><p style={{fontSize:9,color:"#666"}}>JPG, PNG ou PDF</p></div>
+                  <div><p style={{fontSize:11,fontWeight:600,color:pressDoc?"#4CC864":GOLD}}>{pressDoc?.name||"Photo carte de presse"}</p><p style={{fontSize:9,color:"#666"}}>JPG, PNG ou PDF</p></div>
                 </label>
                 <div style={{display:"flex",gap:8,padding:"8px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)"}}>
                   <span>🔒</span><p style={{fontSize:10,color:"#666",lineHeight:1.6}}>Document supprimé après vérification — RGPD</p>
@@ -852,9 +863,9 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
                 </select>
                 <input className="ifield" placeholder="Structure / Entreprise" value={company} onChange={e=>setCompany(e.target.value)}/>
                 <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px",border:`2px dashed ${proDoc?"rgba(76,200,100,0.5)":"rgba(201,168,76,0.3)"}`,background:proDoc?"rgba(76,200,100,0.05)":"rgba(201,168,76,0.02)",cursor:"pointer"}}>
-                  <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setProDoc(e.target.files[0]?.name||"")}/>
+                  <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setProDoc(e.target.files[0]||null)}/>
                   <span style={{fontSize:18}}>{proDoc?"✅":"📎"}</span>
-                  <div><p style={{fontSize:11,fontWeight:600,color:proDoc?"#4CC864":GOLD}}>{proDoc||"Justificatif professionnel"}</p><p style={{fontSize:9,color:"#666"}}>Contrat, fiche de paie, carte intermittent...</p></div>
+                  <div><p style={{fontSize:11,fontWeight:600,color:proDoc?"#4CC864":GOLD}}>{proDoc?.name||"Justificatif professionnel"}</p><p style={{fontSize:9,color:"#666"}}>Contrat, fiche de paie, carte intermittent...</p></div>
                 </label>
                 <div style={{display:"flex",gap:8,padding:"8px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)"}}>
                   <span>🔒</span><p style={{fontSize:10,color:"#666",lineHeight:1.6}}>Document supprimé après vérification — RGPD</p>
@@ -1034,11 +1045,32 @@ www.cnil.fr`},
     </div>
   );
 }
-function JuryDash() {
+
+function JuryDash({user}) {
   const [scores,setScores]=useState([7,8,7,9,8,8]);
   const [comment,setComment]=useState("");
   const [submitted,setSubmitted]=useState(false);
+  const [saving,setSaving]=useState(false);
   const avg=(scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+
+  const handleSubmitRating=async(concertId)=>{
+    setSaving(true);
+    try{
+      await supabase.from("jury_ratings").insert({
+        concert_id:concertId||1,
+        jury_id:user?.id,
+        performance:scores[0],
+        scenographie:scores[1],
+        interaction:scores[2],
+        atmosphere:scores[3],
+        direction:scores[4],
+        setlist:scores[5],
+        comment
+      });
+      setSubmitted(true);
+    }catch(e){console.error(e);}
+    finally{setSaving(false);}
+  };
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:680,margin:"0 auto"}}>
       <span style={{padding:"4px 12px",background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",fontSize:9,letterSpacing:2,color:GOLD,textTransform:"uppercase",fontWeight:600}}>⭐ Accès Juré</span>
@@ -1072,7 +1104,7 @@ function JuryDash() {
             </div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:20}}>
               <div><p style={{fontSize:11,color:"#888"}}>Moyenne</p><p className="fd gt" style={{fontSize:28,fontWeight:700}}>{avg}</p></div>
-              <button className="bp" style={{padding:"14px 28px",fontSize:11,letterSpacing:2}} onClick={()=>setSubmitted(true)}>Soumettre</button>
+              <button className="bp" style={{padding:"14px 28px",fontSize:11,letterSpacing:2,opacity:saving?0.6:1}} onClick={()=>handleSubmitRating(1)} disabled={saving}>{saving?"...":"Soumettre"}</button>
             </div>
           </div>
         ):(
@@ -1088,16 +1120,52 @@ function JuryDash() {
   );
 }
 
-function AdminDash() {
+function AdminDash({upcomingData,pastData}) {
   const [tab,setTab]=useState("upcoming");
   const [toast,setToast]=useState("");
+  const [applications,setApplications]=useState([]);
+  const [loading,setLoading]=useState(true);
   const show=msg=>{setToast(msg);setTimeout(()=>setToast(""),2500);};
+
+  useEffect(()=>{
+    async function fetchApps(){
+      const{data}=await supabase.from("jury_applications").select("*").order("created_at",{ascending:false});
+      if(data)setApplications(data);
+      setLoading(false);
+    }
+    fetchApps();
+  },[]);
+
+  const updateStatus=async(id,status)=>{
+    await supabase.from("jury_applications").update({status}).eq("id",id);
+    setApplications(prev=>prev.map(a=>a.id===id?{...a,status}:a));
+    show(status==="validated"?"Juré validé ✓":"Candidature refusée");
+  };
+
+  const viewDocument=async(docUrl)=>{
+    if(!docUrl){show("Pas de document");return;}
+    const{data}=await supabase.storage.from("jury-documents").createSignedUrl(docUrl,60);
+    if(data?.signedUrl)window.open(data.signedUrl,"_blank");
+    else show("Erreur d'accès au document");
+  };
+
+  const deleteDocument=async(id,docUrl)=>{
+    if(!docUrl)return;
+    await supabase.storage.from("jury-documents").remove([docUrl]);
+    await supabase.from("jury_applications").update({document_url:null}).eq("id",id);
+    setApplications(prev=>prev.map(a=>a.id===id?{...a,document_url:null}:a));
+    show("Document supprimé — RGPD ✓");
+  };
+
+  const U=upcomingData||UPCOMING_DEFAULT;
+  const P=pastData||PAST_DEFAULT;
+
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:960,margin:"0 auto"}}>
       <span style={{padding:"4px 12px",background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.3)",fontSize:9,letterSpacing:2,color:GOLD,textTransform:"uppercase",fontWeight:600}}>🔑 Administration</span>
       <h1 className="fd" style={{fontSize:"clamp(24px,5vw,36px)",fontWeight:400,letterSpacing:2,marginBottom:32,marginTop:8}}>Back Office CROWDN</h1>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:32}}>
-        {[["8","À venir","🎵"],["4","Passés","🎭"],["4","Jurés","⭐"],["247","Membres","👥"]].map(([n,l,ic])=>(
+        {[[String(U.length),"À venir","🎵"],[String(P.length),"Passés","🎭"],[String(applications.length),"Candidats","⭐"],[String(applications.filter(a=>a.status==="validated").length),"Jurés","👥"]].map(([n,l,ic])=>(
           <div key={l} style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",padding:"16px",textAlign:"center"}}>
             <div style={{fontSize:20,marginBottom:6}}>{ic}</div>
             <div className="fd gt" style={{fontSize:22,fontWeight:700}}>{n}</div>
@@ -1113,48 +1181,47 @@ function AdminDash() {
       {tab==="upcoming"&&(
         <div>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}>
-            <p style={{fontSize:11,color:"#888"}}>{UPCOMING_DEFAULT.length} concerts à venir</p>
-            <button className="bp" style={{fontSize:9,padding:"8px 16px"}} onClick={()=>show("Concert ajouté ✓")}>+ Ajouter</button>
+            <p style={{fontSize:11,color:"#888"}}>{U.length} concerts à venir</p>
           </div>
-          <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"hidden"}}>
-            <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Catégorie</th><th>Actions</th></tr></thead>
-              <tbody>{UPCOMING_DEFAULT.map(c=>(<tr key={c.id}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{GENRES.find(g=>g.name===c.genre)?.icon} {c.genre}</td><td>{c.date}</td><td><span className="tag" style={{fontSize:8}}>{c.category.split(" ")[0]}</span></td><td><button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Jury assigné ✓")}>Assigner jury</button></td></tr>))}</tbody>
+          <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"auto"}}>
+            <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Ville</th><th>Catégorie</th></tr></thead>
+              <tbody>{U.slice(0,20).map((c,i)=>(<tr key={i}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{c.genre}</td><td>{c.date}</td><td>{c.city}</td><td><span className="tag" style={{fontSize:8}}>{c.category}</span></td></tr>))}</tbody>
             </table>
           </div>
+          {U.length>20&&<p style={{fontSize:10,color:"#666",marginTop:8,textAlign:"center"}}>+ {U.length-20} concerts supplémentaires</p>}
         </div>
       )}
       {tab==="passés"&&(
-        <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"hidden"}}>
-          <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Citation</th><th>Actions</th></tr></thead>
-            <tbody>{PAST_DEFAULT.map(c=>(<tr key={c.id}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{GENRES.find(g=>g.name===c.genre)?.icon} {c.genre}</td><td>{c.date}</td><td><span style={{color:"#4CC864"}}>✓ Publiée</span></td><td><div style={{display:"flex",gap:6}}><button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Citation modifiée ✓")}>Modifier</button><button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("TikTok mis à jour ✓")}>TikTok</button></div></td></tr>))}</tbody>
+        <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"auto"}}>
+          <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Citation</th></tr></thead>
+            <tbody>{P.map((c,i)=>(<tr key={i}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{c.genre}</td><td>{c.date}</td><td><span style={{color:"#4CC864"}}>✓ Publiée</span></td></tr>))}</tbody>
           </table>
         </div>
       )}
       {tab==="jurés"&&(
         <div>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:14,flexWrap:"wrap",gap:8}}>
-            <p style={{fontSize:11,color:"#888"}}>Candidatures — validation manuelle</p>
-            <div style={{display:"flex",gap:6}}>
-              {["Tous","En attente","Validé","Refusé"].map(f=>(<button key={f} style={{padding:"4px 12px",background:"rgba(201,168,76,0.08)",border:"1px solid rgba(201,168,76,0.2)",color:GOLD,fontSize:8,fontWeight:700,letterSpacing:1,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{f}</button>))}
-            </div>
-          </div>
+          <p style={{fontSize:11,color:"#888",marginBottom:14}}>{applications.length} candidatures — validation manuelle</p>
+          {loading?<p style={{color:"#555",fontSize:12}}>Chargement...</p>:(
           <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"auto"}}>
             <table className="at">
-              <thead><tr><th>Nom</th><th>Profil</th><th>Top genres</th><th>Document</th><th>Statut</th><th>Actions</th></tr></thead>
+              <thead><tr><th>Nom</th><th>Email</th><th>Profil</th><th>Genres</th><th>Document</th><th>Statut</th><th>Actions</th></tr></thead>
               <tbody>
-                {[{n:"Sophie L.",p:"📰 Journaliste",g:"Pop · R&B · Soul",doc:true,st:"Validé"},{n:"Marc F.",p:"🎶 Acteur musique",g:"Hip-Hop · Rap",doc:true,st:"Validé"},{n:"Elena R.",p:"🎤 Fan du genre",g:"Flamenco · Latin · Jazz",doc:false,st:"Validé"},{n:"Thomas V.",p:"👁️ Non-fan",g:"Rock · Metal · Punk",doc:false,st:"En attente"},{n:"Karim B.",p:"📰 Journaliste",g:"Hip-Hop · R&B",doc:true,st:"En attente"},{n:"Julie M.",p:"🎶 Acteur musique",g:"Pop · Électro · R&B",doc:true,st:"En attente"}].map(({n,p,g,doc,st})=>(
-                  <tr key={n}>
-                    <td style={{fontWeight:600,color:"#eee"}}>{n}</td>
-                    <td style={{fontSize:11}}>{p}</td>
-                    <td style={{fontSize:10,color:"#888"}}>{g}</td>
-                    <td>{doc?(<div style={{display:"flex",gap:4}}><button className="bo" style={{fontSize:8,padding:"3px 8px"}} onClick={()=>show("Document téléchargé ✓")}>📎 Voir</button><button style={{background:"rgba(255,50,50,0.1)",border:"1px solid rgba(255,50,50,0.3)",color:"#FF5050",fontSize:8,padding:"3px 8px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>show("Document supprimé 🗑️")}>🗑️</button></div>):(<span style={{fontSize:10,color:"#555"}}>—</span>)}</td>
-                    <td><span style={{padding:"3px 10px",background:st==="Validé"?"rgba(76,200,100,0.1)":st==="En attente"?"rgba(201,168,76,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${st==="Validé"?"rgba(76,200,100,0.3)":st==="En attente"?"rgba(201,168,76,0.3)":"rgba(255,50,50,0.3)"}`,color:st==="Validé"?"#4CC864":st==="En attente"?GOLD:"#FF5050",fontSize:9,letterSpacing:1.5,fontWeight:600,textTransform:"uppercase",display:"inline-block"}}>{st}</span></td>
-                    <td><div style={{display:"flex",gap:6}}>{st==="En attente"&&<><button className="bp" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Juré validé ✓")}>✓ Valider</button><button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Candidature refusée")}>✗ Refuser</button></>}{st==="Validé"&&<button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>show("Email envoyé ✓")}>Contacter</button>}</div></td>
+                {applications.map(a=>(
+                  <tr key={a.id}>
+                    <td style={{fontWeight:600,color:"#eee"}}>{a.name}</td>
+                    <td style={{fontSize:10,color:"#888"}}>{a.email}</td>
+                    <td style={{fontSize:11}}>{a.profile_type==="journalist"?"📰 Journaliste":a.profile_type==="music_pro"?"🎶 Acteur musique":"🎤 Fan"}</td>
+                    <td style={{fontSize:10,color:"#888"}}>{a.genre||"—"}</td>
+                    <td>{a.document_url?(<div style={{display:"flex",gap:4}}><button className="bo" style={{fontSize:8,padding:"3px 8px"}} onClick={()=>viewDocument(a.document_url)}>📎 Voir</button><button style={{background:"rgba(255,50,50,0.1)",border:"1px solid rgba(255,50,50,0.3)",color:"#FF5050",fontSize:8,padding:"3px 8px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>deleteDocument(a.id,a.document_url)}>🗑️</button></div>):(<span style={{fontSize:10,color:"#555"}}>—</span>)}</td>
+                    <td><span style={{padding:"3px 10px",background:a.status==="validated"?"rgba(76,200,100,0.1)":a.status==="pending"?"rgba(201,168,76,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${a.status==="validated"?"rgba(76,200,100,0.3)":a.status==="pending"?"rgba(201,168,76,0.3)":"rgba(255,50,50,0.3)"}`,color:a.status==="validated"?"#4CC864":a.status==="pending"?GOLD:"#FF5050",fontSize:9,letterSpacing:1.5,fontWeight:600,textTransform:"uppercase",display:"inline-block"}}>{a.status==="validated"?"Validé":a.status==="pending"?"En attente":"Refusé"}</span></td>
+                    <td><div style={{display:"flex",gap:6}}>{a.status==="pending"&&<><button className="bp" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>updateStatus(a.id,"validated")}>✓ Valider</button><button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={()=>updateStatus(a.id,"refused")}>✗ Refuser</button></>}</div></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          )}
+          {applications.length===0&&!loading&&<p style={{textAlign:"center",color:"#555",padding:40,fontSize:12}}>Aucune candidature pour le moment</p>}
         </div>
       )}
       {toast&&<div className="toast">{toast}</div>}
@@ -1248,8 +1315,8 @@ export default function App() {
       {page==="become-jury"&&<BecomeJury nav={nav}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav}/>}
-      {page==="jury-dash"&&role==="jury"&&<JuryDash/>}
-      {page==="admin"&&role==="admin"&&<AdminDash/>}
+      {page==="jury-dash"&&role==="jury"&&<JuryDash user={user}/>}
+      {page==="admin"&&role==="admin"&&<AdminDash upcomingData={upcomingData} pastData={pastData}/>}
       {page==="mentions-legales"&&<MentionsLegales nav={nav}/>}
       {page==="politique-confidentialite"&&<PolitiqueConfidentialite nav={nav}/>}
 
