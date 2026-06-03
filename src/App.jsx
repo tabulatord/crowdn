@@ -258,9 +258,9 @@ function HomePage({nav,upcoming,past}) {
               <button className="bo" onClick={()=>nav("upcoming")}>Concerts à venir</button>
             </div>
             <div style={{display:"flex",gap:36,justifyContent:"center",marginTop:48,animation:"fadeUp 0.8s 0.9s ease both",opacity:0}}>
-              {[["247","Concerts"],["89","Jurés"],["16","Genres"]].map(([n,l])=>(
+              {[[String(U.length),"Concerts à venir"]].map(([n,l])=>(
                 <div key={l} style={{textAlign:"center"}}>
-                  <div className="fd gt" style={{fontSize:24,fontWeight:700}}>{n}</div>
+                  <div className="fd gt" style={{fontSize:28,fontWeight:700}}>{n}</div>
                   <div style={{fontSize:9,letterSpacing:2,color:"#666",textTransform:"uppercase",marginTop:4}}>{l}</div>
                 </div>
               ))}
