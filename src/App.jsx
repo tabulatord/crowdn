@@ -96,12 +96,35 @@ const styles = `
 `;
 
 const GENRES = [
-  {name:"Hip-Hop",icon:"🎤"},{name:"Pop",icon:"✨"},{name:"Rock",icon:"🎸"},
-  {name:"R&B",icon:"🎶"},{name:"Électro",icon:"🎛️"},{name:"Jazz",icon:"🎷"},
-  {name:"Metal",icon:"🤘"},{name:"Classique",icon:"🎻"},{name:"Reggae",icon:"🌿"},
-  {name:"Soul",icon:"🔥"},{name:"Folk",icon:"🪕"},{name:"Afrobeats",icon:"🥁"},
-  {name:"Flamenco",icon:"💃"},{name:"Punk",icon:"⚡"},{name:"Latin",icon:"🌶️"},{name:"Blues",icon:"🎵"},
+  {name:"Hip-Hop"},{name:"Pop"},{name:"Rock"},
+  {name:"R&B"},{name:"Électro"},{name:"Jazz"},
+  {name:"Metal"},{name:"Classique"},{name:"Reggae"},
+  {name:"Soul"},{name:"Folk"},{name:"Afrobeats"},
+  {name:"Flamenco"},{name:"Punk"},{name:"Latin"},{name:"Blues"},
 ];
+
+function GenreIcon({name,size=20}) {
+  const s=size,G="#C9A84C",GL="#E8C96A";
+  const icons={
+    "Hip-Hop":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><circle cx="22" cy="13" r="8" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08"/><line x1="22" y1="21" x2="22" y2="40" stroke={G} strokeWidth="1.2"/><line x1="11" y1="40" x2="33" y2="40" stroke={G} strokeWidth="2.5" strokeLinecap="round"/><path d="M17,6 L15,2 L29,2 L27,6" stroke={G} strokeWidth="1" fill="none"/></svg>,
+    "Pop":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><polygon points="22,3 27,16 40,17 30,26 33,40 22,31 11,40 14,26 4,17 17,16" stroke={G} strokeWidth="1.3" fill={G} fillOpacity="0.1" strokeLinejoin="round"/><circle cx="22" cy="24" r="5" fill={G} opacity="0.25"/></svg>,
+    "Rock":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><line x1="22" y1="3" x2="22" y2="29" stroke={G} strokeWidth="1.5"/><ellipse cx="15" cy="36" rx="8" ry="5" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.1"/><path d="M30,3 L22,3 L22,9" stroke={G} strokeWidth="2" strokeLinecap="round"/>{[18,20,22,24,26].map(x=><line key={x} x1={x} y1="11" x2={x} y2="24" stroke={G} strokeWidth="0.6" opacity="0.4"/>)}</svg>,
+    "R&B":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="17" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.05"/><circle cx="22" cy="22" r="11" stroke={G} strokeWidth="0.8" fill="none" opacity="0.4"/><circle cx="22" cy="22" r="5" stroke={G} strokeWidth="0.6" fill="none" opacity="0.3"/><circle cx="22" cy="22" r="2" fill={G} opacity="0.7"/><line x1="22" y1="5" x2="22" y2="2" stroke={G} strokeWidth="1"/><circle cx="24" cy="2" r="1.5" fill={G} opacity="0.5"/></svg>,
+    "Électro":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><path d="M24,2 L12,22 L22,22 L17,42" stroke={GL} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/><circle cx="24" cy="2" r="1.5" fill={GL}/></svg>,
+    "Jazz":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><ellipse cx="17" cy="37" rx="9" ry="5" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.1"/><line x1="26" y1="37" x2="26" y2="11" stroke={G} strokeWidth="1.2"/><path d="M26,11 Q26,5 32,5 Q38,5 38,10 Q38,14 32,15 Q26,17 26,20" stroke={G} strokeWidth="1.2" fill="none"/></svg>,
+    "Metal":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><circle cx="22" cy="15" r="11" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.06"/><circle cx="17" cy="13" r="2" fill={G} opacity="0.15"/><circle cx="27" cy="13" r="2" fill={G} opacity="0.15"/><path d="M15,26 L13,34 L9,42" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><path d="M29,26 L31,34 L35,42" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><path d="M9,42 L5,36" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><path d="M9,42 L12,44" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><path d="M35,42 L39,36" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><path d="M35,42 L32,44" stroke={G} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+    "Classique":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><path d="M22,2 Q29,9 26,18 Q24,24 22,22 Q20,20 18,13 Q16,7 22,2Z" stroke={G} strokeWidth="1" fill={G} fillOpacity="0.12"/><line x1="22" y1="22" x2="22" y2="40" stroke={G} strokeWidth="1.5"/><path d="M22,24 Q31,26 30,32 Q29,36 22,34" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08"/><circle cx="22" cy="40" r="3" fill={G} opacity="0.4"/></svg>,
+    "Reggae":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><circle cx="22" cy="24" r="10" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08"/><path d="M22,7 L19,11 L15,7 L18,12" stroke={G} strokeWidth="1" fill="none" opacity="0.5"/><path d="M22,7 L25,11 L29,7 L26,12" stroke={G} strokeWidth="1" fill="none" opacity="0.5"/><path d="M16,22 Q22,18 28,22" stroke={G} strokeWidth="1" fill="none"/><circle cx="19" cy="27" r="1" fill={G} opacity="0.5"/><circle cx="25" cy="27" r="1" fill={G} opacity="0.5"/></svg>,
+    "Soul":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><path d="M22,40 L18,22 Q13,2 22,9 Q31,2 26,22Z" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08"/><path d="M17,17 Q22,12 27,17" stroke={G} strokeWidth="0.8" fill="none" opacity="0.4"/></svg>,
+    "Folk":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><line x1="22" y1="4" x2="22" y2="42" stroke={G} strokeWidth="1.2"/><ellipse cx="22" cy="34" rx="10" ry="7" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08"/><line x1="12" y1="34" x2="32" y2="34" stroke={G} strokeWidth="0.6" opacity="0.3"/><path d="M27,4 L22,4" stroke={G} strokeWidth="1.5" strokeLinecap="round"/><circle cx="27" cy="4" r="1" fill={G}/><circle cx="25" cy="4" r="1" fill={G} opacity="0.5"/></svg>,
+    "Afrobeats":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><path d="M23,11 Q27,10 31,12 Q34,14 33,18 L36,19 L34,21 Q35,25 32,30 Q27,35 24,36 L23,40 Q21,39 18,38 Q14,36 13,32 Q12,27 14,24 Q11,22 12,18 Q13,15 16,13 Q18,11 23,11Z" stroke={G} strokeWidth="1.3" fill={G} fillOpacity="0.12"/><path d="M17,7 L19,4 L21,5 L22,2 L23,5 L25,4 L27,7" stroke={GL} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" fill="none"/><line x1="18" y1="8" x2="26" y2="8" stroke={GL} strokeWidth="1" opacity="0.5"/></svg>,
+    "Flamenco":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><path d="M31,7 Q13,2 9,15 Q5,29 20,24" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08"/><path d="M31,7 Q37,20 24,24" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.06"/><path d="M20,24 Q15,29 17,34 Q19,40 24,40 Q30,40 29,34 Q27,29 24,24" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.1"/></svg>,
+    "Punk":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><path d="M9,24 Q9,7 22,7 Q35,7 35,24" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.06"/><line x1="22" y1="7" x2="22" y2="1" stroke={G} strokeWidth="1.5" strokeLinecap="round"/><line x1="16" y1="8" x2="14" y2="2" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><line x1="28" y1="8" x2="30" y2="2" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><line x1="9" y1="24" x2="35" y2="24" stroke={G} strokeWidth="0.8" opacity="0.3"/><line x1="14" y1="29" x2="12" y2="42" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><line x1="30" y1="29" x2="32" y2="42" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><circle cx="12" cy="42" r="2" fill={G} opacity="0.3"/><circle cx="32" cy="42" r="2" fill={G} opacity="0.3"/></svg>,
+    "Latin":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><ellipse cx="15" cy="22" rx="8" ry="15" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08" transform="rotate(-10,15,22)"/><ellipse cx="29" cy="22" rx="8" ry="15" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.08" transform="rotate(10,29,22)"/><line x1="15" y1="7" x2="15" y2="2" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><line x1="29" y1="7" x2="29" y2="2" stroke={G} strokeWidth="1.2" strokeLinecap="round"/><circle cx="15" cy="22" r="1.5" fill={G} opacity="0.4"/><circle cx="29" cy="22" r="1.5" fill={G} opacity="0.4"/></svg>,
+    "Blues":<svg width={s} height={s} viewBox="0 0 44 44" fill="none"><rect x="13" y="9" width="18" height="26" rx="3" stroke={G} strokeWidth="1.2" fill={G} fillOpacity="0.06"/>{[17,20,23,26,29].map(x=><line key={x} x1={x} y1="14" x2={x} y2="30" stroke={G} strokeWidth="0.8" opacity="0.5"/>)}<rect x="15" y="17" width="3" height="4" fill={G} opacity="0.3"/><rect x="21" y="20" width="3" height="4" fill={G} opacity="0.3"/><rect x="27" y="17" width="3" height="4" fill={G} opacity="0.3"/></svg>,
+  };
+  return icons[name]||<span style={{color:G,fontSize:size*0.7}}>♫</span>;
+}
 
 function daysUntil(dateStr) {
   const parts = dateStr.split(" ");
@@ -186,7 +209,7 @@ function GenreStrip({onGenreClick}) {
         <div className="genre-track">
           {doubled.map((g,i)=>(
             <button key={i} className="genre-pill" onClick={()=>onGenreClick&&onGenreClick(g.name)}>
-              <span style={{fontSize:20}}>{g.icon}</span>
+              <GenreIcon name={g.name} size={20}/>
               <span style={{fontSize:11,fontWeight:600,letterSpacing:1.5,textTransform:"uppercase",color:"#ccc"}}>{g.name}</span>
             </button>
           ))}
@@ -212,7 +235,7 @@ function PastCard({c,idx,onClick}) {
             </div>
             <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4}}>
               <span className="tag" style={{fontSize:8,padding:"2px 8px"}}>{c.category.split(" ")[0]}</span>
-              <span style={{fontSize:10,color:"#666"}}>{GENRES.find(g=>g.name===c.genre)?.icon} {c.genre}</span>
+              <span style={{fontSize:10,color:"#666",display:"flex",alignItems:"center",gap:4}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
             </div>
           </div>
           <div className="qb">
@@ -307,7 +330,7 @@ function HomePage({nav,upcoming,past}) {
               <div style={{height:100,background:"linear-gradient(135deg,rgba(201,168,76,0.07),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:44,position:"relative"}}>
                 {c.img}
                 <div style={{position:"absolute",top:10,left:12}}><span className="ub"><span className="ld"/>{c.daysLeft}j</span></div>
-                <div style={{position:"absolute",top:10,right:12,fontSize:16}}>{GENRES.find(g=>g.name===c.genre)?.icon}</div>
+                <div style={{position:"absolute",top:10,right:12}}><GenreIcon name={c.genre} size={16}/></div>
               </div>
               <div style={{padding:"14px 18px 18px"}}>
                 <h3 style={{fontSize:15,fontWeight:700,letterSpacing:1,marginBottom:3}}>{c.artist}</h3>
@@ -358,7 +381,7 @@ function UpcomingPage({nav,initialGenre,concerts}) {
             {allGenres.map(g=>(
               <button key={g} onClick={()=>setActiveGenre(g)}
                 style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:activeGenre===g?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeGenre===g?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeGenre===g?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>
-                {g!=="Tous"&&<span style={{fontSize:16}}>{GENRES.find(x=>x.name===g)?.icon}</span>}
+                {g!=="Tous"&&<GenreIcon name={g} size={16}/>}
                 {g}
               </button>
             ))}
@@ -371,7 +394,7 @@ function UpcomingPage({nav,initialGenre,concerts}) {
           <div className="genre-filter" style={{marginBottom:24,display:"flex"}}>
             {allGenres.map(g=>(
               <button key={g} className={`gf-btn ${activeGenre===g?"active":""}`} onClick={()=>setActiveGenre(g)}>
-                {g!=="Tous"&&<span style={{marginRight:6}}>{GENRES.find(x=>x.name===g)?.icon}</span>}{g}
+                {g!=="Tous"&&<span style={{marginRight:6}}><GenreIcon name={g} size={14}/></span>}{g}
               </button>
             ))}
           </div>
@@ -381,7 +404,7 @@ function UpcomingPage({nav,initialGenre,concerts}) {
                 <div style={{height:110,background:"linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",fontSize:44,position:"relative"}}>
                   {c.img}
                   <div style={{position:"absolute",top:10,left:12}}><span className="ub"><span className="ld"/>{c.daysLeft}j</span></div>
-                  <div style={{position:"absolute",top:10,right:12,fontSize:16}}>{GENRES.find(g=>g.name===c.genre)?.icon}</div>
+                  <div style={{position:"absolute",top:10,right:12}}><GenreIcon name={c.genre} size={16}/></div>
                 </div>
                 <div style={{padding:"14px 18px 18px"}}>
                   <h3 style={{fontSize:15,fontWeight:700,letterSpacing:1,marginBottom:3}}>{c.artist}</h3>
@@ -394,7 +417,7 @@ function UpcomingPage({nav,initialGenre,concerts}) {
                 </div>
               </div>
             ))}
-            {filtered.length===0&&<div style={{textAlign:"center",padding:"60px 20px",color:"#555",gridColumn:"1/-1"}}><p style={{fontSize:32,marginBottom:12}}>{GENRES.find(g=>g.name===activeGenre)?.icon}</p><p style={{fontSize:13}}>Aucun concert {activeGenre} pour le moment.</p></div>}
+            {filtered.length===0&&<div style={{textAlign:"center",padding:"60px 20px",color:"#555",gridColumn:"1/-1"}}><div style={{marginBottom:12}}><GenreIcon name={activeGenre} size={32}/></div><p style={{fontSize:13}}>Aucun concert {activeGenre} pour le moment.</p></div>}
           </div>
         </div>
       </div>
@@ -404,7 +427,6 @@ function UpcomingPage({nav,initialGenre,concerts}) {
 
 function UpcomingDetail({c,nav}) {
   if(!c) return null;
-  const gi=GENRES.find(g=>g.name===c.genre)?.icon;
   return (
     <div style={{paddingBottom:80,paddingTop:72}}>
       <div className="detail-grid" style={{display:"grid",maxWidth:1200,margin:"0 auto",padding:"40px 32px",gap:48,alignItems:"start"}}>
@@ -414,9 +436,9 @@ function UpcomingDetail({c,nav}) {
           <div style={{fontSize:96,margin:"24px 0 20px"}}>{c.img}</div>
           <h1 className="fd" style={{fontSize:"clamp(30px,5vw,52px)",fontWeight:400,letterSpacing:3,marginBottom:8,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
           <p style={{fontSize:13,color:"#888",marginBottom:12}}>{c.date} · {c.city} · {c.venue}</p>
-          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap"}}>
+          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",alignItems:"center"}}>
             <span className="tag">{c.category}</span>
-            <span style={{padding:"4px 12px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",fontSize:11,color:"#aaa"}}>{gi} {c.genre}</span>
+            <span style={{padding:"4px 12px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",fontSize:11,color:"#aaa",display:"flex",alignItems:"center",gap:6}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
           </div>
         </div>
         {/* Right */}
@@ -429,11 +451,14 @@ function UpcomingDetail({c,nav}) {
           </div>
           <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",padding:24}}>
             <p className="sl" style={{marginBottom:16}}>Informations</p>
-            {[["Artiste",c.artist],["Date",c.date],["Ville",c.city],["Salle",c.venue],["Catégorie",c.category],["Genre",`${gi} ${c.genre}`]].map(([k,v])=>(
+            {[["Artiste",c.artist],["Date",c.date],["Ville",c.city],["Salle",c.venue],["Catégorie",c.category]].map(([k,v])=>(
               <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",fontSize:12}}>
                 <span style={{color:"#666"}}>{k}</span><span style={{color:"#eee"}}>{v}</span>
               </div>
             ))}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",fontSize:12}}>
+              <span style={{color:"#666"}}>Genre</span><span style={{color:"#eee",display:"flex",alignItems:"center",gap:6}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -460,7 +485,7 @@ function PastPage({nav,concerts}) {
             {allGenres.map(g=>(
               <button key={g} onClick={()=>setActiveGenre(g)}
                 style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:activeGenre===g?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeGenre===g?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeGenre===g?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>
-                {g!=="Tous"&&<span style={{fontSize:16}}>{GENRES.find(x=>x.name===g)?.icon}</span>}
+                {g!=="Tous"&&<GenreIcon name={g} size={16}/>}
                 {g}
               </button>
             ))}
@@ -470,7 +495,7 @@ function PastPage({nav,concerts}) {
           <div className="genre-filter" style={{marginBottom:24,display:"flex"}}>
             {allGenres.map(g=>(
               <button key={g} className={`gf-btn ${activeGenre===g?"active":""}`} onClick={()=>setActiveGenre(g)}>
-                {g!=="Tous"&&<span style={{marginRight:6}}>{GENRES.find(x=>x.name===g)?.icon}</span>}{g}
+                {g!=="Tous"&&<span style={{marginRight:6}}><GenreIcon name={g} size={14}/></span>}{g}
               </button>
             ))}
           </div>
@@ -485,12 +510,11 @@ function PastPage({nav,concerts}) {
 
 function PastDetail({c,nav}) {
   if(!c) return null;
-  const gi=GENRES.find(g=>g.name===c.genre)?.icon;
   return (
     <div style={{paddingBottom:80}}>
       <div style={{padding:"100px 20px 40px",textAlign:"center",background:"linear-gradient(to bottom,rgba(201,168,76,0.04),transparent)"}}>
         <div style={{fontSize:64,marginBottom:16}}>{c.img}</div>
-        <p className="sl" style={{marginBottom:8}}>{gi} {c.genre}</p>
+        <p className="sl" style={{marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><GenreIcon name={c.genre} size={16}/>{c.genre}</p>
         <h1 className="fd" style={{fontSize:"clamp(28px,6vw,48px)",fontWeight:400,letterSpacing:3,marginBottom:8,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
         <p style={{fontSize:13,color:"#888",marginBottom:16}}>{c.date} · {c.city} · {c.venue}</p>
         <span className="tag">{c.category}</span>
@@ -1104,7 +1128,7 @@ function JuryDash({user}) {
       <p className="sl" style={{marginBottom:12}}>Concerts assignés</p>
       {UPCOMING_DEFAULT.slice(0,3).map(c=>(
         <div key={c.id} style={{background:BG2,border:"1px solid rgba(201,168,76,0.1)",padding:"14px 18px",marginBottom:8,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:22}}>{c.img}</span><div><p style={{fontWeight:700,fontSize:13}}>{c.artist}</p><p style={{fontSize:11,color:"#888"}}>{c.date} · {c.city} · {GENRES.find(g=>g.name===c.genre)?.icon} {c.genre}</p></div></div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}><span style={{fontSize:22}}>{c.img}</span><div><p style={{fontWeight:700,fontSize:13}}>{c.artist}</p><p style={{fontSize:11,color:"#888",display:"flex",alignItems:"center",gap:4}}>{c.date} · {c.city} · <GenreIcon name={c.genre} size={12}/>{c.genre}</p></div></div>
           <span className="ub" style={{fontSize:8}}><span className="ld"/>{c.daysLeft}j</span>
         </div>
       ))}
