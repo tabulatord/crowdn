@@ -740,6 +740,10 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
     finally{setLoading(false);}
   };
 
+  const sendEmail=async(to,subject,html)=>{
+    try{await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to,subject,html})});}catch(e){console.log("Email error",e);}
+  };
+
   const handleProfileComplete=async()=>{
     setLoading(true);
     try{
@@ -759,6 +763,28 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
           motivation,status:"pending",
           document_url:docUrl||null
         });
+        await sendEmail(email,"👑 Candidature reçue — CROWDN",
+          `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:32px;background:#0A0A0A;color:#F5F0E8;border:1px solid #C9A84C">
+            <h1 style="color:#C9A84C;font-size:22px;margin-bottom:16px">CROWDN</h1>
+            <p>Bonjour ${name},</p>
+            <p>Votre candidature jury a bien été reçue. Notre équipe l'examine actuellement.</p>
+            <p><strong>Profil :</strong> ${juryProfile==="journalist"?"Journaliste":juryProfile==="music_pro"?"Acteur de la musique":"Fan de musique live"}</p>
+            <p>Vous recevrez un email dès que votre candidature sera traitée.</p>
+            <p style="color:#C9A84C;margin-top:24px">— L'équipe CROWDN</p>
+            <p style="font-size:11px;color:#666;margin-top:16px">Couronné par la Foule · crowdn.fr</p>
+          </div>`
+        );
+        await sendEmail("contact@crowdn.fr","🔔 Nouvelle candidature jury — CROWDN",
+          `<div style="font-family:sans-serif;padding:20px">
+            <h2>Nouvelle candidature jury</h2>
+            <p><strong>Nom :</strong> ${name}</p>
+            <p><strong>Email :</strong> ${email}</p>
+            <p><strong>Profil :</strong> ${juryProfile}</p>
+            <p><strong>Genres :</strong> ${genres.filter(g=>g).join(", ")||"—"}</p>
+            <p><strong>Document :</strong> ${docUrl?"Oui":"Non"}</p>
+            <p><a href="https://crowdn.fr">Voir dans l'admin →</a></p>
+          </div>`
+        );
       }
       setSuccess("Profil créé ! Vérifie ton email pour confirmer ton compte.");
       setTimeout(()=>{onLogin("user",newUser);},2000);
@@ -1138,8 +1164,39 @@ function AdminDash({upcomingData,pastData}) {
 
   const updateStatus=async(id,status)=>{
     await supabase.from("jury_applications").update({status}).eq("id",id);
+    const app=applications.find(a=>a.id===id);
     setApplications(prev=>prev.map(a=>a.id===id?{...a,status}:a));
-    show(status==="validated"?"Juré validé ✓":"Candidature refusée");
+    if(app){
+      const sendEmail=async(to,subject,html)=>{
+        try{await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to,subject,html})});}catch(e){}
+      };
+      if(status==="validated"){
+        await sendEmail(app.email,"🎉 Candidature validée — CROWDN",
+          `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:32px;background:#0A0A0A;color:#F5F0E8;border:1px solid #C9A84C">
+            <h1 style="color:#C9A84C;font-size:22px;margin-bottom:16px">CROWDN</h1>
+            <p>Bonjour ${app.name},</p>
+            <p>Félicitations ! Votre candidature jury a été <strong style="color:#4CC864">validée</strong>.</p>
+            <p>Vous faites désormais partie du panel de jurés certifiés CROWDN.</p>
+            <p>Connectez-vous sur <a href="https://crowdn.fr" style="color:#C9A84C">crowdn.fr</a> pour accéder à votre espace juré.</p>
+            <p style="color:#C9A84C;margin-top:24px">— L'équipe CROWDN</p>
+            <p style="font-size:11px;color:#666;margin-top:16px">Couronné par la Foule · crowdn.fr</p>
+          </div>`
+        );
+      } else {
+        await sendEmail(app.email,"Candidature CROWDN — Mise à jour",
+          `<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:32px;background:#0A0A0A;color:#F5F0E8;border:1px solid #C9A84C">
+            <h1 style="color:#C9A84C;font-size:22px;margin-bottom:16px">CROWDN</h1>
+            <p>Bonjour ${app.name},</p>
+            <p>Nous vous remercions pour votre candidature au jury CROWDN.</p>
+            <p>Après examen, nous ne sommes pas en mesure de retenir votre profil pour cette session.</p>
+            <p>Vous pouvez candidater à nouveau lors de la prochaine session d'ouverture.</p>
+            <p style="color:#C9A84C;margin-top:24px">— L'équipe CROWDN</p>
+            <p style="font-size:11px;color:#666;margin-top:16px">Couronné par la Foule · crowdn.fr</p>
+          </div>`
+        );
+      }
+    }
+    show(status==="validated"?"Juré validé ✓ — Email envoyé":"Candidature refusée — Email envoyé");
   };
 
   const viewDocument=async(docUrl)=>{
