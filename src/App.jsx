@@ -320,9 +320,11 @@ function PastCard({c,idx,onClick,artistImages={}}) {
   );
 }
 
-function HomePage({nav,upcoming,past,artistImages={}}) {
+function HomePage({nav,upcoming,past,artistImages={},social,user}) {
   const U = upcoming||UPCOMING_DEFAULT;
   const P = past||PAST_DEFAULT;
+  const follows=social?.follows||[];
+  const followedConcerts=follows.length>0?U.filter(c=>follows.includes(c.artist)):[];
   return (
     <div style={{paddingBottom:80}}>
       {/* Hero — desktop split, mobile centré */}
@@ -380,6 +382,41 @@ function HomePage({nav,upcoming,past,artistImages={}}) {
       </div>
 
       <GenreStrip onGenreClick={g=>nav("upcoming",{filterGenre:g})}/>
+
+      {/* Mon actualité — artistes suivis */}
+      {user&&follows.length>0&&(
+        <div style={{padding:"40px 32px 0",maxWidth:1400,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+            <div><p className="sl" style={{marginBottom:6}}>Mon actualité</p><h2 className="fd" style={{fontSize:"clamp(18px,3vw,26px)",fontWeight:400,letterSpacing:2}}>Artistes que tu suis</h2></div>
+            <button className="bo" style={{fontSize:9,padding:"8px 16px"}} onClick={()=>nav("profile")}>Mon profil</button>
+          </div>
+          <div style={{display:"flex",gap:14,overflowX:"auto",paddingBottom:12,scrollbarWidth:"none"}}>
+            {follows.map(name=>(
+              <div key={name} onClick={()=>nav("artist",{artistName:name})} style={{flexShrink:0,textAlign:"center",cursor:"pointer"}}>
+                <div style={{width:56,height:56,borderRadius:"50%",padding:2,background:"linear-gradient(135deg,#8B6914,#C9A84C,#E8C96A)",marginBottom:4}}>
+                  <div style={{width:"100%",height:"100%",borderRadius:"50%",overflow:"hidden",border:"2px solid #0A0A0A"}}><ArtistImg name={name} size={52} images={artistImages}/></div>
+                </div>
+                <p style={{fontSize:9,fontWeight:600,color:"#aaa",width:60,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name.split(" ")[0]}</p>
+              </div>
+            ))}
+          </div>
+          {followedConcerts.length>0&&(
+            <div style={{marginTop:16}}>
+              <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:10}}>Leurs prochains concerts</p>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {followedConcerts.slice(0,5).map(c=>(
+                  <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}>
+                    <ArtistImg name={c.artist} fallback={c.img} size={32} images={artistImages}/>
+                    <div style={{flex:1}}><span style={{fontWeight:600,fontSize:12}}>{c.artist}</span><span style={{fontSize:10,color:"#888",marginLeft:8}}>{c.date} · {c.venue}</span></div>
+                    <span className="tag" style={{fontSize:7}}>{c.category}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.1),transparent)",marginTop:24}}/>
+        </div>
+      )}
 
       {/* Concerts grid — responsive */}
       <div style={{padding:"60px 32px 0",maxWidth:1400,margin:"0 auto"}}>
@@ -1874,7 +1911,10 @@ export default function App() {
           {navItems.map(item=>(<button key={item.key} className={`nl ${page===item.key?"active":""}`} onClick={()=>nav(item.key)}>{item.label}</button>))}
           {role?(
             <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:11,color:GOLD,fontWeight:600,letterSpacing:1}}>{user?.email?.split("@")[0]}</span>
+              <button onClick={()=>nav("profile")} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
+                <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(201,168,76,0.15)",border:"1px solid rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:GOLD,fontWeight:700}}>{(user?.email?.split("@")[0]||"U").slice(0,2).toUpperCase()}</div>
+                <span style={{fontSize:11,color:GOLD,fontWeight:600,letterSpacing:1,fontFamily:"'Montserrat',sans-serif"}}>{user?.email?.split("@")[0]}</span>
+              </button>
               <button className="bo" style={{fontSize:9,padding:"8px 16px"}} onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}>Déconnexion</button>
             </div>
           ):(
@@ -1883,7 +1923,7 @@ export default function App() {
         </div>
       </nav>
 
-      {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData} artistImages={artistImages}/>}
+      {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData} artistImages={artistImages} social={social} user={user}/>}
       {page==="login"&&<Login nav={nav} onLogin={(r,u,an)=>{setRole(r);setUser(u);setUserArtistName(an);setWantsJuryLogin(false);if(r==="artist")nav("artist-dash");else if(r==="jury")nav("jury-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
       {page==="upcoming"&&<UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData} artistImages={artistImages}/>}
       {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages} social={social} user={user}/>}
