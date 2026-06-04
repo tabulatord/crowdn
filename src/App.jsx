@@ -964,7 +964,47 @@ function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}
   );
 }
 
-function BecomeJury({nav}) {
+function BecomeJury({nav,user}) {
+  const [showForm,setShowForm]=useState(false);
+  const [juryProfile,setJuryProfile]=useState("");
+  const [pressCard,setPressCard]=useState("");
+  const [media,setMedia]=useState("");
+  const [pressDoc,setPressDoc]=useState(null);
+  const [proRole,setProRole]=useState("");
+  const [company,setCompany]=useState("");
+  const [proDoc,setProDoc]=useState(null);
+  const [genres,setGenres]=useState(["","","","",""]);
+  const [motivation,setMotivation]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [success,setSuccess]=useState("");
+  const [error,setError]=useState("");
+  const allGenres=GENRES.map(g=>g.name);
+
+  const handleSubmit=async()=>{
+    if(!juryProfile){setError("Choisis un profil");return;}
+    setLoading(true);setError("");
+    try{
+      let docUrl="";
+      const docFile=pressDoc||proDoc;
+      if(docFile){
+        const ext=docFile.name.split(".").pop();
+        const path=`${user.id}/${Date.now()}.${ext}`;
+        const{error:upErr}=await supabase.storage.from("jury-documents").upload(path,docFile);
+        if(!upErr)docUrl=path;
+      }
+      const userName=user?.user_metadata?.name||user?.email?.split("@")[0]||"";
+      await supabase.from("jury_applications").insert({
+        name:userName,email:user.email,profile_type:juryProfile,
+        genre:genres.filter(g=>g).join(", "),
+        motivation,status:"pending",document_url:docUrl||null
+      });
+      try{await fetch("/api/send-email",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({to:user.email,subject:"👑 Candidature reçue — CROWDN",html:`<div style="font-family:sans-serif;max-width:500px;margin:0 auto;padding:32px;background:#0A0A0A;color:#F5F0E8;border:1px solid #C9A84C"><h1 style="color:#C9A84C;font-size:22px">CROWDN</h1><p>Bonjour ${userName},</p><p>Votre candidature jury a bien été reçue. Notre équipe l'examine actuellement.</p><p style="color:#C9A84C;margin-top:24px">— L'équipe CROWDN</p></div>`})});}catch(e){}
+      setSuccess("Candidature envoyée ! Tu recevras un email quand elle sera traitée.");
+      setShowForm(false);
+    }catch(e){setError("Erreur lors de l'envoi");}
+    finally{setLoading(false);}
+  };
+
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:720,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:48}}>
@@ -974,7 +1014,7 @@ function BecomeJury({nav}) {
         <div style={{background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.2)",padding:"16px 20px",maxWidth:540,margin:"0 auto",display:"flex",alignItems:"center",gap:12}}>
           <span style={{fontSize:20,flexShrink:0}}>⚖️</span>
           <p style={{fontSize:12,color:"rgba(245,240,232,0.75)",lineHeight:1.7,textAlign:"left"}}>
-            Chaque concert est évalué par un panel de 3 types de jurés. <strong style={{color:GOLD}}>Les votes individuels restent privés.</strong> Seul le résultat collectif est publié. CROWDN détermine si chaque fan est Fan ou Non-fan selon ses genres déclarés.
+            Chaque concert est évalué par un panel de 3 types de jurés. <strong style={{color:GOLD}}>Les votes individuels restent privés.</strong> Seul le résultat collectif est publié.
           </p>
         </div>
       </div>
@@ -1008,19 +1048,81 @@ function BecomeJury({nav}) {
         ))}
       </div>
       <div className="gd" style={{marginBottom:40}}/>
-      <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:24,marginBottom:40}}>
-        <p className="sl" style={{marginBottom:16}}>Ce que vous obtenez</p>
-        {["Accès à l'espace jury privé","Concerts assignés en avant-première","Badge Juré certifié CROWDN","Profil visible sur la plateforme","Participation aux CROWDN Awards"].map((item,i)=>(
-          <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"8px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",fontSize:12}}>
-            <span style={{color:GOLD,fontSize:14}}>✦</span><span style={{color:"#ccc"}}>{item}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{textAlign:"center"}}>
-        <p style={{fontSize:12,color:"#888",marginBottom:20,lineHeight:1.8}}>Prêt à rejoindre le jury ? Crée ton compte — tu compléteras ton profil juré directement à l'inscription.</p>
-        <button className="bp" style={{padding:"16px 40px",fontSize:11,letterSpacing:3}} onClick={()=>nav("login",{wantsJury:true})}>👑 Créer mon compte juré</button>
-        <p style={{fontSize:11,color:"#555",marginTop:16}}>Déjà membre ?{" "}<span style={{color:GOLD,cursor:"pointer",fontWeight:600}} onClick={()=>nav("login")}>Se connecter</span></p>
-      </div>
+
+      {success&&<div style={{background:"rgba(76,200,100,0.1)",border:"1px solid rgba(76,200,100,0.3)",padding:16,textAlign:"center",marginBottom:24}}><p style={{color:"#4CC864",fontSize:13,fontWeight:600}}>{success}</p></div>}
+
+      {/* ═══ FORMULAIRE CANDIDATURE ═══ */}
+      {user&&!success?(
+        <div>
+          {!showForm?(
+            <div style={{textAlign:"center"}}>
+              <p style={{fontSize:12,color:"#888",marginBottom:20,lineHeight:1.8}}>Tu es connecté en tant que <strong style={{color:GOLD}}>{user.email}</strong></p>
+              <button className="bp" style={{padding:"16px 40px",fontSize:11,letterSpacing:3}} onClick={()=>setShowForm(true)}>👑 Candidater au jury</button>
+            </div>
+          ):(
+            <div style={{background:"rgba(201,168,76,0.03)",border:"1px solid rgba(201,168,76,0.15)",padding:24}}>
+              <p className="sl" style={{marginBottom:16}}>Ma candidature</p>
+              {error&&<p style={{color:"#FF5050",fontSize:11,marginBottom:12}}>{error}</p>}
+
+              <p style={{fontSize:11,color:"#888",marginBottom:10}}>Quel est ton profil ?</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:20}}>
+                {[["journalist","📰","Journaliste"],["music_pro","🎶","Acteur musique"],["fan","🎤","Fan de musique"]].map(([val,ic,label])=>(
+                  <button key={val} onClick={()=>setJuryProfile(val)} style={{padding:"14px 10px",background:juryProfile===val?"rgba(201,168,76,0.1)":"rgba(255,255,255,0.03)",border:`1px solid ${juryProfile===val?"rgba(201,168,76,0.5)":"rgba(255,255,255,0.08)"}`,cursor:"pointer",textAlign:"center",transition:"all 0.2s"}}>
+                    <span style={{fontSize:20,display:"block",marginBottom:6}}>{ic}</span>
+                    <span style={{fontSize:10,fontWeight:700,letterSpacing:1,color:juryProfile===val?GOLD:"#888",fontFamily:"'Montserrat',sans-serif"}}>{label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {juryProfile==="journalist"&&(
+                <div style={{marginBottom:16}}>
+                  <input className="ifield" placeholder="N° carte CCIJP" value={pressCard} onChange={e=>setPressCard(e.target.value)} style={{marginBottom:8}}/>
+                  <input className="ifield" placeholder="Média / Rédaction" value={media} onChange={e=>setMedia(e.target.value)} style={{marginBottom:8}}/>
+                  <label style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"rgba(201,168,76,0.06)",border:"1px dashed rgba(201,168,76,0.3)",cursor:"pointer"}}>
+                    <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setPressDoc(e.target.files[0]||null)}/>
+                    <span style={{fontSize:18}}>{pressDoc?"✅":"📎"}</span>
+                    <div><p style={{fontSize:11,fontWeight:600,color:pressDoc?"#4CC864":GOLD}}>{pressDoc?.name||"Photo carte de presse"}</p><p style={{fontSize:9,color:"#666"}}>JPG, PNG ou PDF</p></div>
+                  </label>
+                </div>
+              )}
+
+              {juryProfile==="music_pro"&&(
+                <div style={{marginBottom:16}}>
+                  <input className="ifield" placeholder="Ton rôle (artiste, manager, ingénieur son...)" value={proRole} onChange={e=>setProRole(e.target.value)} style={{marginBottom:8}}/>
+                  <input className="ifield" placeholder="Structure / Label / Indépendant" value={company} onChange={e=>setCompany(e.target.value)} style={{marginBottom:8}}/>
+                  <label style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:"rgba(201,168,76,0.06)",border:"1px dashed rgba(201,168,76,0.3)",cursor:"pointer"}}>
+                    <input type="file" accept="image/*,.pdf" style={{display:"none"}} onChange={e=>setProDoc(e.target.files[0]||null)}/>
+                    <span style={{fontSize:18}}>{proDoc?"✅":"📎"}</span>
+                    <div><p style={{fontSize:11,fontWeight:600,color:proDoc?"#4CC864":GOLD}}>{proDoc?.name||"Justificatif professionnel"}</p><p style={{fontSize:9,color:"#666"}}>Contrat, fiche de paie, carte intermittent...</p></div>
+                  </label>
+                </div>
+              )}
+
+              <p style={{fontSize:11,color:"#888",marginBottom:8}}>Tes 5 genres préférés (classés du favori au 5e)</p>
+              <div style={{display:"grid",gap:6,marginBottom:16}}>
+                {genres.map((g,i)=>(
+                  <select key={i} className="ifield" value={g} onChange={e=>{const n=[...genres];n[i]=e.target.value;setGenres(n);}}>
+                    <option value="">{i===0?"Genre favori":`Genre #${i+1}`}</option>
+                    {allGenres.filter(x=>x===g||!genres.includes(x)).map(x=><option key={x} value={x}>{x}</option>)}
+                  </select>
+                ))}
+              </div>
+
+              <textarea className="ifield" placeholder="Pourquoi tu veux devenir juré CROWDN ? (optionnel)" value={motivation} onChange={e=>setMotivation(e.target.value)} rows={3} style={{marginBottom:16,resize:"vertical"}}/>
+
+              <div style={{display:"flex",gap:10}}>
+                <button className="bp" style={{fontSize:10,padding:"12px 24px",opacity:loading?0.6:1}} onClick={handleSubmit} disabled={loading}>{loading?"Envoi...":"Envoyer ma candidature"}</button>
+                <button className="bo" style={{fontSize:10,padding:"12px 24px"}} onClick={()=>setShowForm(false)}>Annuler</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ):(
+        !success&&<div style={{textAlign:"center"}}>
+          <p style={{fontSize:12,color:"#888",marginBottom:20,lineHeight:1.8}}>Connecte-toi d'abord pour candidater au jury.</p>
+          <button className="bp" style={{padding:"16px 40px",fontSize:11,letterSpacing:3}} onClick={()=>nav("login")}>Se connecter</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2027,7 +2129,7 @@ export default function App() {
       {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages} social={social} user={user}/>}
       {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
       {page==="past-detail"&&<PastDetail c={sel} nav={nav} artistImages={artistImages}/>}
-      {page==="become-jury"&&<BecomeJury nav={nav}/>}
+      {page==="become-jury"&&<BecomeJury nav={nav} user={user}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages} role={role} userArtistName={userArtistName}/>}
@@ -2090,7 +2192,7 @@ export default function App() {
         <button className={`mni ${page==="upcoming"?"active":""}`} onClick={()=>nav("upcoming")}><span style={{fontSize:18}}>🎵</span>À venir</button>
         <button className={`mni ${page==="past"?"active":""}`} onClick={()=>nav("past")}><span style={{fontSize:18}}>🎭</span>Passés</button>
         <button className={`mni ${page==="how-it-works"?"active":""}`} onClick={()=>nav("how-it-works")}><span style={{fontSize:18}}>💡</span>Info</button>
-        {!role&&<button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Jury</button>}
+        {role!=="jury"&&role!=="artist"&&<button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Jury</button>}
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
         {role&&<button className={`mni ${page==="profile"?"active":""}`} onClick={()=>nav("profile")}><span style={{fontSize:18}}>👤</span>Mon profil</button>}
         {role==="jury"&&<button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon espace</button>}
