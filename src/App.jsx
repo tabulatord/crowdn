@@ -1076,7 +1076,7 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
             Mot de passe oublié ?{" "}
             <span style={{color:GOLD,cursor:"pointer",fontWeight:600}} onClick={async()=>{
               if(!email){setError("Entrez votre email d'abord");return;}
-              await supabase.auth.resetPasswordForEmail(email);
+              await supabase.auth.resetPasswordForEmail(email,{redirectTo:"https://crowdn.fr"});
               setSuccess("Email de réinitialisation envoyé !");
             }}>Réinitialiser</span>
           </p>
@@ -1788,6 +1788,9 @@ export default function App() {
   const [cookieConsent,setCookieConsent]=useState(()=>localStorage.getItem("crowdn_cookies")||null);
   const [artistImages,setArtistImages]=useState({});
   const social=useSocial(user);
+  const [showResetPwd,setShowResetPwd]=useState(false);
+  const [newPwd,setNewPwd]=useState("");
+  const [resetMsg,setResetMsg]=useState("");
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{
@@ -1796,7 +1799,8 @@ export default function App() {
           .then(({data:profile})=>{setUser(session.user);setRole(profile?.role||"user");setUserArtistName(profile?.artist_name||null);});
       }
     });
-    const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
+      if(event==="PASSWORD_RECOVERY"){setShowResetPwd(true);}
       if(!session){setUser(null);setRole(null);}
     });
     return()=>subscription.unsubscribe();
@@ -1912,6 +1916,25 @@ export default function App() {
           <a href="mailto:contact@crowdn.fr" style={{color:"#666",fontSize:10,textDecoration:"none",letterSpacing:1,textTransform:"uppercase",fontFamily:"'Montserrat',sans-serif"}}>contact@crowdn.fr</a>
         </div>
       </div>
+
+      {/* Reset password modal */}
+      {showResetPwd&&(
+        <div style={{position:"fixed",inset:0,zIndex:600,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#111",border:"1px solid rgba(201,168,76,0.3)",padding:32,maxWidth:400,width:"100%",textAlign:"center"}}>
+            <Crown size={32}/>
+            <h2 className="fd" style={{fontSize:22,fontWeight:400,letterSpacing:2,margin:"12px 0 8px"}}>Nouveau mot de passe</h2>
+            <p style={{fontSize:12,color:"#888",marginBottom:20}}>Choisis ton nouveau mot de passe (6 caractères minimum)</p>
+            <input className="ifield" type="password" placeholder="Nouveau mot de passe" value={newPwd} onChange={e=>setNewPwd(e.target.value)} style={{marginBottom:12}}/>
+            {resetMsg&&<p style={{fontSize:11,color:resetMsg.includes("✓")?"#4CC864":"#FF5050",marginBottom:12}}>{resetMsg}</p>}
+            <button className="bp" style={{width:"100%",padding:"12px",fontSize:11,letterSpacing:2}} onClick={async()=>{
+              if(newPwd.length<6){setResetMsg("6 caractères minimum");return;}
+              const{error}=await supabase.auth.updateUser({password:newPwd});
+              if(error){setResetMsg("Erreur : "+error.message);}
+              else{setResetMsg("Mot de passe modifié ✓");setTimeout(()=>{setShowResetPwd(false);setNewPwd("");setResetMsg("");nav("home");},2000);}
+            }}>Confirmer</button>
+          </div>
+        </div>
+      )}
 
       {/* Cookie banner */}
       {!cookieConsent&&(
