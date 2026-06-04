@@ -200,6 +200,63 @@ function ArtistImg({name,fallback,size=44,images={}}) {
   return <span style={{fontSize:size*0.6,display:"flex",alignItems:"center",justifyContent:"center",width:size,height:size}}>{fallback||"🎵"}</span>;
 }
 
+function CrownBadge({size=16}) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="11" fill="url(#crownGrad)" />
+    <path d="M6 16L8 9L12 13L16 9L18 16Z" fill="#000" opacity="0.8"/>
+    <path d="M6.5 16.5L8.5 9.5L12 13L15.5 9.5L17.5 16.5" stroke="#000" strokeWidth="0.5" fill="none"/>
+    <rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="#000" opacity="0.6"/>
+    <defs><linearGradient id="crownGrad" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stopColor="#8B6914"/><stop offset="50%" stopColor="#C9A84C"/><stop offset="100%" stopColor="#E8C96A"/></linearGradient></defs>
+  </svg>;
+}
+
+function useSocial(user) {
+  const [follows,setFollows]=useState([]);
+  const [attending,setAttending]=useState([]);
+  const [certified,setCertified]=useState([]);
+
+  useEffect(()=>{
+    async function load(){
+      const{data:cert}=await supabase.from("certified_artists").select("artist_name");
+      if(cert)setCertified(cert.map(c=>c.artist_name));
+      if(!user)return;
+      const{data:f}=await supabase.from("user_follows").select("artist_name").eq("user_id",user.id);
+      if(f)setFollows(f.map(x=>x.artist_name));
+      const{data:a}=await supabase.from("user_attending").select("concert_id").eq("user_id",user.id);
+      if(a)setAttending(a.map(x=>x.concert_id));
+    }
+    load();
+  },[user]);
+
+  const toggleFollow=async(artistName)=>{
+    if(!user)return;
+    if(follows.includes(artistName)){
+      await supabase.from("user_follows").delete().eq("user_id",user.id).eq("artist_name",artistName);
+      setFollows(f=>f.filter(n=>n!==artistName));
+    }else{
+      await supabase.from("user_follows").insert({user_id:user.id,artist_name:artistName});
+      setFollows(f=>[...f,artistName]);
+    }
+  };
+
+  const toggleAttending=async(concertId)=>{
+    if(!user)return;
+    if(attending.includes(concertId)){
+      await supabase.from("user_attending").delete().eq("user_id",user.id).eq("concert_id",concertId);
+      setAttending(a=>a.filter(id=>id!==concertId));
+    }else{
+      await supabase.from("user_attending").insert({user_id:user.id,concert_id:concertId});
+      setAttending(a=>[...a,concertId]);
+    }
+  };
+
+  const isCertified=(name)=>certified.includes(name);
+  const isFollowing=(name)=>follows.includes(name);
+  const isAttending=(id)=>attending.includes(id);
+
+  return {follows,attending,certified,toggleFollow,toggleAttending,isCertified,isFollowing,isAttending};
+}
+
 function GenreStrip({onGenreClick}) {
   const doubled = [...GENRES,...GENRES];
   return (
@@ -431,8 +488,11 @@ function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
   );
 }
 
-function UpcomingDetail({c,nav,artistImages={}}) {
+function UpcomingDetail({c,nav,artistImages={},social={},user}) {
   if(!c) return null;
+  const isFollowing=social.isFollowing?.(c.artist);
+  const isAtt=social.isAttending?.(c.id);
+  const isCert=social.isCertified?.(c.artist);
   return (
     <div style={{paddingBottom:80,paddingTop:72}}>
       <div className="detail-grid" style={{display:"grid",maxWidth:1200,margin:"0 auto",padding:"40px 32px",gap:48,alignItems:"start"}}>
@@ -440,12 +500,20 @@ function UpcomingDetail({c,nav,artistImages={}}) {
         <div style={{textAlign:"center"}}>
           <span className="ub" style={{marginBottom:20,display:"inline-flex"}}><span className="ld"/>{c.daysLeft} jours restants</span>
           <div style={{margin:"24px 0 20px"}}><ArtistImg name={c.artist} fallback={c.img} size={120} images={artistImages}/></div>
-          <h1 className="fd" style={{fontSize:"clamp(30px,5vw,52px)",fontWeight:400,letterSpacing:3,marginBottom:8,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:8}}>
+            <h1 className="fd" style={{fontSize:"clamp(30px,5vw,52px)",fontWeight:400,letterSpacing:3,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
+            {isCert&&<CrownBadge size={22}/>}
+          </div>
           <p style={{fontSize:13,color:"#888",marginBottom:12}}>{c.date} · {c.city} · {c.venue}</p>
-          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
             <span className="tag">{c.category}</span>
             <span style={{padding:"4px 12px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",fontSize:11,color:"#aaa",display:"flex",alignItems:"center",gap:6}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
           </div>
+          {user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+            <button onClick={()=>social.toggleAttending?.(c.id)} style={{padding:"10px 24px",background:isAtt?"rgba(76,200,100,0.1)":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isAtt?"1px solid rgba(76,200,100,0.4)":"none",color:isAtt?"#4CC864":"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isAtt?"✓ J'y vais":"J'y vais"}</button>
+            <button onClick={()=>social.toggleFollow?.(c.artist)} style={{padding:"10px 24px",background:"transparent",border:`1px solid ${isFollowing?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.15)"}`,color:isFollowing?GOLD:"#aaa",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
+          </div>}
+          {!user&&<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2}}>Se connecter</button>}
         </div>
         {/* Right */}
         <div>
@@ -702,18 +770,38 @@ function PastDetail({c,nav,artistImages={}}) {
   );
 }
 
-function ArtistPage({artistName,nav}) {
+function ArtistPage({artistName,nav,social={},user,artistImages={},upcomingData=[]}) {
   const artist=ARTISTS[artistName];
-  const upcoming=UPCOMING_DEFAULT.filter(c=>c.artist===artistName);
+  const upcoming=[...upcomingData,...UPCOMING_DEFAULT].filter(c=>c.artist===artistName);
   const past=PAST_DEFAULT.filter(c=>c.artist===artistName);
-  if(!artist) return null;
+  const isFollowing=social.isFollowing?.(artistName);
+  const isCert=social.isCertified?.(artistName);
+  if(!artist) return (
+    <div style={{padding:"100px 20px 80px",maxWidth:680,margin:"0 auto",textAlign:"center"}}>
+      <div style={{margin:"0 auto 12px"}}><ArtistImg name={artistName} size={88} images={artistImages}/></div>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:8}}>
+        <h1 className="fd" style={{fontSize:"clamp(28px,6vw,44px)",fontWeight:400,letterSpacing:3}}>{artistName}</h1>
+        {isCert&&<CrownBadge size={22}/>}
+      </div>
+      <p style={{fontSize:12,color:"#888",marginBottom:16}}>Artiste présent sur CROWDN</p>
+      {user&&social.toggleFollow&&<button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",marginBottom:16}}>{isFollowing?"Suivi ✓":"Suivre"}</button>}
+      {!user&&<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2,marginBottom:16}}>Se connecter pour suivre</button>}
+      {upcoming.length>0&&<div style={{textAlign:"left",maxWidth:500,margin:"0 auto"}}><p className="sl" style={{marginBottom:12}}>Concerts à venir</p>{upcoming.map(c=><div key={c.id} className="cc" style={{marginBottom:8,cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}><div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px"}}><div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{c.date} · {c.city}</p><p style={{fontSize:11,color:"#888",marginTop:2}}>{c.venue}</p></div><span className="tag" style={{fontSize:8}}>{c.category}</span></div></div>)}</div>}
+      <button className="bo" style={{fontSize:10,padding:"10px 20px",marginTop:20}} onClick={()=>nav("home")}>← Retour</button>
+    </div>
+  );
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:680,margin:"0 auto"}}>
-      <div style={{textAlign:"center",marginBottom:40}}>
-        <div style={{fontSize:72,marginBottom:16}}>{[...UPCOMING_DEFAULT,...PAST_DEFAULT].find(c=>c.artist===artistName)?.img||"🎵"}</div>
-        <p className="sl" style={{marginBottom:8}}>Artiste CROWDN</p>
-        <h1 className="fd" style={{fontSize:"clamp(28px,6vw,48px)",fontWeight:400,letterSpacing:3,marginBottom:12}}>{artistName}</h1>
-        <p style={{fontSize:12,color:"#888",lineHeight:1.8,maxWidth:480,margin:"0 auto"}}>{artist.bio}</p>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{margin:"0 auto 12px"}}><ArtistImg name={artistName} size={88} images={artistImages}/></div>
+        <p className="sl" style={{marginBottom:6}}>Artiste CROWDN</p>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:8}}>
+          <h1 className="fd" style={{fontSize:"clamp(28px,6vw,44px)",fontWeight:400,letterSpacing:3}}>{artistName}</h1>
+          {isCert&&<CrownBadge size={22}/>}
+        </div>
+        <p style={{fontSize:12,color:"#888",lineHeight:1.8,maxWidth:480,margin:"0 auto 16px"}}>{artist.bio}</p>
+        {user&&social.toggleFollow&&<button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",marginBottom:12}}>{isFollowing?"Suivi ✓":"Suivre"}</button>}
+        {!user&&<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2,marginBottom:12}}>Se connecter pour suivre</button>}
       </div>
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:40}}>
         <a href={artist.spotify} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 20px",background:"rgba(29,185,84,0.1)",border:"1px solid rgba(29,185,84,0.3)",color:"#1DB954",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif"}}>♫ Spotify</a>
@@ -1313,11 +1401,14 @@ function JuryDash({user}) {
   );
 }
 
-function AdminDash({upcomingData,pastData}) {
+function AdminDash({upcomingData,pastData,onRefresh}) {
   const [tab,setTab]=useState("upcoming");
   const [toast,setToast]=useState("");
   const [applications,setApplications]=useState([]);
   const [loading,setLoading]=useState(true);
+  const [showAddForm,setShowAddForm]=useState(false);
+  const [newConcert,setNewConcert]=useState({artist:"",date:"",city:"",venue:"",category:"Olympia Class",genre:"Hip-Hop",img:"🎤"});
+  const [saving,setSaving]=useState(false);
   const show=msg=>{setToast(msg);setTimeout(()=>setToast(""),2500);};
 
   useEffect(()=>{
@@ -1381,6 +1472,29 @@ function AdminDash({upcomingData,pastData}) {
     show("Document supprimé — RGPD ✓");
   };
 
+  const addConcert=async()=>{
+    if(!newConcert.artist||!newConcert.date||!newConcert.city||!newConcert.venue){show("Remplis tous les champs");return;}
+    setSaving(true);
+    try{
+      const months={"01":"Jan","02":"Fév","03":"Mar","04":"Avr","05":"Mai","06":"Juin","07":"Juil","08":"Août","09":"Sep","10":"Oct","11":"Nov","12":"Déc"};
+      const d=newConcert.date.split("-");
+      const dateFr=`${parseInt(d[2])} ${months[d[1]]} ${d[0]}`;
+      await supabase.from("upcoming_concerts").insert({artist:newConcert.artist,date:dateFr,city:newConcert.city,venue:newConcert.venue,category:newConcert.category,genre:newConcert.genre,img:newConcert.img||"🎵"});
+      show("Concert ajouté ✓");
+      setNewConcert({artist:"",date:"",city:"",venue:"",category:"Olympia Class",genre:"Hip-Hop",img:"🎤"});
+      setShowAddForm(false);
+      if(onRefresh)onRefresh();
+    }catch(e){show("Erreur");}
+    finally{setSaving(false);}
+  };
+
+  const deleteConcert=async(id)=>{
+    if(!window.confirm("Supprimer ce concert ?"))return;
+    await supabase.from("upcoming_concerts").delete().eq("id",id);
+    show("Concert supprimé ✓");
+    if(onRefresh)onRefresh();
+  };
+
   const U=upcomingData||UPCOMING_DEFAULT;
   const P=pastData||PAST_DEFAULT;
 
@@ -1406,13 +1520,35 @@ function AdminDash({upcomingData,pastData}) {
         <div>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}>
             <p style={{fontSize:11,color:"#888"}}>{U.length} concerts à venir</p>
+            <button className="bp" style={{fontSize:9,padding:"8px 16px"}} onClick={()=>setShowAddForm(!showAddForm)}>+ Ajouter un concert</button>
           </div>
+          {showAddForm&&(
+            <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.2)",padding:20,marginBottom:16}}>
+              <p className="sl" style={{marginBottom:14}}>Nouveau concert</p>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <input className="ifield" placeholder="Artiste *" value={newConcert.artist} onChange={e=>setNewConcert({...newConcert,artist:e.target.value})}/>
+                <input className="ifield" type="date" value={newConcert.date} onChange={e=>setNewConcert({...newConcert,date:e.target.value})}/>
+                <input className="ifield" placeholder="Ville *" value={newConcert.city} onChange={e=>setNewConcert({...newConcert,city:e.target.value})}/>
+                <input className="ifield" placeholder="Salle *" value={newConcert.venue} onChange={e=>setNewConcert({...newConcert,venue:e.target.value})}/>
+                <select className="ifield" style={{cursor:"pointer"}} value={newConcert.category} onChange={e=>setNewConcert({...newConcert,category:e.target.value})}>
+                  <option>Olympia Class</option><option>Zenith Class</option><option>Arena Class</option><option>Stadium Class</option>
+                </select>
+                <select className="ifield" style={{cursor:"pointer"}} value={newConcert.genre} onChange={e=>setNewConcert({...newConcert,genre:e.target.value})}>
+                  {["Hip-Hop","Pop","Rock","R&B","Électro","Jazz","Metal","Classique","Reggae","Soul","Folk","Afrobeats","Flamenco","Punk","Latin","Blues"].map(g=><option key={g}>{g}</option>)}
+                </select>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button className="bp" style={{fontSize:10,padding:"10px 20px",opacity:saving?0.6:1}} onClick={addConcert} disabled={saving}>{saving?"...":"Ajouter ✓"}</button>
+                <button className="bo" style={{fontSize:10,padding:"10px 20px"}} onClick={()=>setShowAddForm(false)}>Annuler</button>
+              </div>
+            </div>
+          )}
           <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"auto"}}>
-            <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Ville</th><th>Catégorie</th></tr></thead>
-              <tbody>{U.slice(0,20).map((c,i)=>(<tr key={i}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{c.genre}</td><td>{c.date}</td><td>{c.city}</td><td><span className="tag" style={{fontSize:8}}>{c.category}</span></td></tr>))}</tbody>
+            <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Ville</th><th>Catégorie</th><th>Actions</th></tr></thead>
+              <tbody>{U.slice(0,30).map((c,i)=>(<tr key={i}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{c.genre}</td><td>{c.date}</td><td>{c.city}</td><td><span className="tag" style={{fontSize:8}}>{c.category}</span></td><td><button style={{background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF5050",fontSize:8,padding:"3px 8px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>deleteConcert(c.id)}>✗</button></td></tr>))}</tbody>
             </table>
           </div>
-          {U.length>20&&<p style={{fontSize:10,color:"#666",marginTop:8,textAlign:"center"}}>+ {U.length-20} concerts supplémentaires</p>}
+          {U.length>30&&<p style={{fontSize:10,color:"#666",marginTop:8,textAlign:"center"}}>+ {U.length-30} concerts supplémentaires</p>}
         </div>
       )}
       {tab==="passés"&&(
@@ -1453,6 +1589,65 @@ function AdminDash({upcomingData,pastData}) {
   );
 }
 
+function UserProfile({user,social,nav,upcomingData,artistImages}) {
+  const {follows,attending,isAttending,toggleFollow,isCertified}=social;
+  const attendingConcerts=upcomingData.filter(c=>attending.includes(c.id));
+  const genreCounts={};
+  upcomingData.forEach(c=>{if(follows.includes(c.artist))genreCounts[c.genre]=(genreCounts[c.genre]||0)+1;});
+  const topGenres=Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([g])=>g);
+  const userName=user?.user_metadata?.name||user?.email?.split("@")[0]||"Utilisateur";
+
+  return (
+    <div style={{padding:"100px 20px 80px",maxWidth:600,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:24}}>
+        <div style={{width:72,height:72,borderRadius:"50%",background:"rgba(201,168,76,0.1)",border:"2px solid rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,color:GOLD,fontWeight:700}}>{userName.slice(0,2).toUpperCase()}</div>
+        <h1 className="fd" style={{fontSize:24,fontWeight:400,letterSpacing:2}}>{userName}</h1>
+        <div style={{display:"flex",gap:24,justifyContent:"center",margin:"16px 0"}}>
+          <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:20,fontWeight:700}}>{follows.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>Suivis</div></div>
+          <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:20,fontWeight:700}}>{attending.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>J'y vais</div></div>
+        </div>
+        {topGenres.length>0&&<div style={{display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap"}}>{topGenres.map(g=><span key={g} style={{padding:"3px 10px",background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.15)",fontSize:9,color:"#aaa",letterSpacing:1}}><GenreIcon name={g} size={12}/> {g}</span>)}</div>}
+      </div>
+
+      <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.15),transparent)",margin:"20px 0"}}/>
+
+      <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:12}}>Artistes suivis</p>
+      {follows.length===0?<p style={{fontSize:12,color:"#555",textAlign:"center",padding:20}}>Tu ne suis aucun artiste encore</p>:
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {follows.map(name=>(
+          <div key={name} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",cursor:"pointer"}} onClick={()=>nav("artist",{artistName:name})}>
+            <ArtistImg name={name} size={36} images={artistImages}/>
+            <div style={{flex:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <span style={{fontWeight:600,fontSize:13}}>{name}</span>
+                {isCertified(name)&&<CrownBadge size={14}/>}
+              </div>
+            </div>
+            <button className="bo" style={{fontSize:8,padding:"4px 10px"}} onClick={e=>{e.stopPropagation();toggleFollow(name);}}>Ne plus suivre</button>
+          </div>
+        ))}
+      </div>}
+
+      <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.15),transparent)",margin:"20px 0"}}/>
+
+      <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:12}}>Mes concerts</p>
+      {attendingConcerts.length===0?<p style={{fontSize:12,color:"#555",textAlign:"center",padding:20}}>Aucun concert marqué "J'y vais"</p>:
+      <div style={{display:"flex",flexDirection:"column",gap:8}}>
+        {attendingConcerts.map(c=>(
+          <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}>
+            <ArtistImg name={c.artist} fallback={c.img} size={36} images={artistImages}/>
+            <div style={{flex:1}}>
+              <span style={{fontWeight:600,fontSize:13}}>{c.artist}</span>
+              <div style={{fontSize:10,color:"#888"}}>{c.date} · {c.venue}</div>
+            </div>
+            <span style={{padding:"3px 8px",border:"1px solid rgba(201,168,76,0.3)",fontSize:8,color:GOLD,letterSpacing:1,fontWeight:700}}>J'Y VAIS</span>
+          </div>
+        ))}
+      </div>}
+    </div>
+  );
+}
+
 export default function App() {
   const [page,setPage]=useState("home");
   const [sel,setSel]=useState(null);
@@ -1465,6 +1660,7 @@ export default function App() {
   const [wantsJuryLogin,setWantsJuryLogin]=useState(false);
   const [cookieConsent,setCookieConsent]=useState(()=>localStorage.getItem("crowdn_cookies")||null);
   const [artistImages,setArtistImages]=useState({});
+  const social=useSocial(user);
 
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{
@@ -1555,14 +1751,18 @@ export default function App() {
       {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData} artistImages={artistImages}/>}
       {page==="login"&&<Login nav={nav} onLogin={(r,u)=>{setRole(r);setUser(u);setWantsJuryLogin(false);if(r==="jury")nav("jury-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
       {page==="upcoming"&&<UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData} artistImages={artistImages}/>}
-      {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages}/>}
+      {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages} social={social} user={user}/>}
       {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
       {page==="past-detail"&&<PastDetail c={sel} nav={nav} artistImages={artistImages}/>}
       {page==="become-jury"&&<BecomeJury nav={nav}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
-      {page==="artist"&&<ArtistPage artistName={artistName} nav={nav}/>}
+      {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
+      {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages}/>}
       {page==="jury-dash"&&role==="jury"&&<JuryDash user={user}/>}
-      {page==="admin"&&role==="admin"&&<AdminDash upcomingData={upcomingData} pastData={pastData}/>}
+      {page==="admin"&&role==="admin"&&<AdminDash upcomingData={upcomingData} pastData={pastData} onRefresh={async()=>{
+        const{data:upcoming}=await supabase.from("upcoming_concerts").select("*").order("id");
+        if(upcoming&&upcoming.length>0)setUpcomingData(upcoming.map(c=>({...c,daysLeft:daysUntil(c.date)})));
+      }}/>}
       {page==="mentions-legales"&&<MentionsLegales nav={nav}/>}
       {page==="politique-confidentialite"&&<PolitiqueConfidentialite nav={nav}/>}
 
@@ -1599,6 +1799,7 @@ export default function App() {
         <button className={`mni ${page==="how-it-works"?"active":""}`} onClick={()=>nav("how-it-works")}><span style={{fontSize:18}}>💡</span>Info</button>
         {!role&&<button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Jury</button>}
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
+        {role&&<button className={`mni ${page==="profile"?"active":""}`} onClick={()=>nav("profile")}><span style={{fontSize:18}}>👤</span>Mon profil</button>}
         {role==="jury"&&<button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon espace</button>}
         {role==="admin"&&<button className={`mni ${page==="admin"?"active":""}`} onClick={()=>nav("admin")}><span style={{fontSize:18}}>🔑</span>Admin</button>}
         {role&&<button className="mni" onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}><span style={{fontSize:18}}>🚪</span>Quitter</button>}
