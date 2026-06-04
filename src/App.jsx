@@ -770,26 +770,14 @@ function PastDetail({c,nav,artistImages={}}) {
   );
 }
 
-function ArtistPage({artistName,nav,social={},user,artistImages={},upcomingData=[]}) {
+function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}) {
+  if(!artistName) return null;
   const artist=ARTISTS[artistName];
-  const upcoming=[...upcomingData,...UPCOMING_DEFAULT].filter(c=>c.artist===artistName);
-  const past=PAST_DEFAULT.filter(c=>c.artist===artistName);
-  const isFollowing=social.isFollowing?.(artistName);
-  const isCert=social.isCertified?.(artistName);
-  if(!artist) return (
-    <div style={{padding:"100px 20px 80px",maxWidth:680,margin:"0 auto",textAlign:"center"}}>
-      <div style={{margin:"0 auto 12px"}}><ArtistImg name={artistName} size={88} images={artistImages}/></div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:8}}>
-        <h1 className="fd" style={{fontSize:"clamp(28px,6vw,44px)",fontWeight:400,letterSpacing:3}}>{artistName}</h1>
-        {isCert&&<CrownBadge size={22}/>}
-      </div>
-      <p style={{fontSize:12,color:"#888",marginBottom:16}}>Artiste présent sur CROWDN</p>
-      {user&&social.toggleFollow&&<button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",marginBottom:16}}>{isFollowing?"Suivi ✓":"Suivre"}</button>}
-      {!user&&<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2,marginBottom:16}}>Se connecter pour suivre</button>}
-      {upcoming.length>0&&<div style={{textAlign:"left",maxWidth:500,margin:"0 auto"}}><p className="sl" style={{marginBottom:12}}>Concerts à venir</p>{upcoming.map(c=><div key={c.id} className="cc" style={{marginBottom:8,cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}><div style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px"}}><div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{c.date} · {c.city}</p><p style={{fontSize:11,color:"#888",marginTop:2}}>{c.venue}</p></div><span className="tag" style={{fontSize:8}}>{c.category}</span></div></div>)}</div>}
-      <button className="bo" style={{fontSize:10,padding:"10px 20px",marginTop:20}} onClick={()=>nav("home")}>← Retour</button>
-    </div>
-  );
+  const upcoming=(upcomingData||[]).filter(c=>c.artist===artistName);
+  const past=(PAST_DEFAULT||[]).filter(c=>c.artist===artistName);
+  const isFollowing=social&&social.isFollowing?social.isFollowing(artistName):false;
+  const isCert=social&&social.isCertified?social.isCertified(artistName):false;
+
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:680,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:32}}>
@@ -799,15 +787,17 @@ function ArtistPage({artistName,nav,social={},user,artistImages={},upcomingData=
           <h1 className="fd" style={{fontSize:"clamp(28px,6vw,44px)",fontWeight:400,letterSpacing:3}}>{artistName}</h1>
           {isCert&&<CrownBadge size={22}/>}
         </div>
-        <p style={{fontSize:12,color:"#888",lineHeight:1.8,maxWidth:480,margin:"0 auto 16px"}}>{artist.bio}</p>
-        {user&&social.toggleFollow&&<button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",marginBottom:12}}>{isFollowing?"Suivi ✓":"Suivre"}</button>}
-        {!user&&<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2,marginBottom:12}}>Se connecter pour suivre</button>}
+        {artist&&<p style={{fontSize:12,color:"#888",lineHeight:1.8,maxWidth:480,margin:"0 auto 16px"}}>{artist.bio}</p>}
+        {!artist&&<p style={{fontSize:12,color:"#888",marginBottom:16}}>Artiste présent sur CROWDN</p>}
+        {user&&social&&social.toggleFollow?
+          <button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",marginBottom:16}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
+          :<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2,marginBottom:16}}>Se connecter pour suivre</button>
+        }
       </div>
-      <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:40}}>
+      {artist&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap",marginBottom:32}}>
         <a href={artist.spotify} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 20px",background:"rgba(29,185,84,0.1)",border:"1px solid rgba(29,185,84,0.3)",color:"#1DB954",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif"}}>♫ Spotify</a>
         <a href={artist.instagram} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 20px",background:"rgba(225,48,108,0.08)",border:"1px solid rgba(225,48,108,0.25)",color:"#E1306C",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif"}}>◎ Instagram</a>
-        <a href={artist.tiktok} target="_blank" rel="noreferrer" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"10px 20px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.12)",color:"#eee",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif"}}>▶ TikTok</a>
-      </div>
+      </div>}
       <div className="gd" style={{marginBottom:32}}/>
       {upcoming.length>0&&(
         <div style={{marginBottom:32}}>
@@ -816,10 +806,7 @@ function ArtistPage({artistName,nav,social={},user,artistImages={},upcomingData=
             <div key={c.id} className="cc" style={{marginBottom:10,cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}>
               <div style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px"}}>
                 <div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{c.date} · {c.city}</p><p style={{fontSize:11,color:"#888",marginTop:2}}>{c.venue}</p></div>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <span className="ub"><span className="ld"/>{c.daysLeft}j</span>
-                  <span className="tag" style={{fontSize:8}}>{c.category.split(" ")[0]}</span>
-                </div>
+                <span className="tag" style={{fontSize:8}}>{c.category}</span>
               </div>
             </div>
           ))}
@@ -1715,24 +1702,31 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
   );
 }
 
-function UserProfile({user,social,nav,upcomingData,artistImages}) {
-  const {follows,attending,isAttending,toggleFollow,isCertified}=social;
-  const attendingConcerts=upcomingData.filter(c=>attending.includes(c.id));
+function UserProfile({user,social,nav,upcomingData,artistImages,role,userArtistName}) {
+  const {follows,attending,toggleFollow,isCertified}=social||{follows:[],attending:[]};
+  const attendingConcerts=(upcomingData||[]).filter(c=>attending.includes(c.id));
   const genreCounts={};
-  upcomingData.forEach(c=>{if(follows.includes(c.artist))genreCounts[c.genre]=(genreCounts[c.genre]||0)+1;});
+  (upcomingData||[]).forEach(c=>{if(follows.includes(c.artist))genreCounts[c.genre]=(genreCounts[c.genre]||0)+1;});
   const topGenres=Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([g])=>g);
   const userName=user?.user_metadata?.name||user?.email?.split("@")[0]||"Utilisateur";
+  const roleLabels={user:"Membre",jury:"Juré certifié",artist:"Artiste",admin:"Administrateur"};
 
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:600,margin:"0 auto"}}>
       <div style={{textAlign:"center",marginBottom:24}}>
         <div style={{width:72,height:72,borderRadius:"50%",background:"rgba(201,168,76,0.1)",border:"2px solid rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,color:GOLD,fontWeight:700}}>{userName.slice(0,2).toUpperCase()}</div>
         <h1 className="fd" style={{fontSize:24,fontWeight:400,letterSpacing:2}}>{userName}</h1>
+        <p style={{fontSize:11,color:"#888",marginTop:4}}>{user?.email}</p>
+        <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 14px",background:role==="artist"?"rgba(201,168,76,0.1)":role==="jury"?"rgba(76,200,100,0.1)":role==="admin"?"rgba(255,80,80,0.1)":"rgba(255,255,255,0.05)",border:`1px solid ${role==="artist"?"rgba(201,168,76,0.3)":role==="jury"?"rgba(76,200,100,0.3)":role==="admin"?"rgba(255,80,80,0.3)":"rgba(255,255,255,0.1)"}`,marginTop:10,fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:role==="artist"?GOLD:role==="jury"?"#4CC864":role==="admin"?"#FF5050":"#888"}}>
+          {role==="artist"&&<CrownBadge size={14}/>}
+          {roleLabels[role]||"Membre"}
+        </div>
+        {role==="artist"&&userArtistName&&<p style={{fontSize:12,color:GOLD,marginTop:8}}>Page artiste : {userArtistName}</p>}
         <div style={{display:"flex",gap:24,justifyContent:"center",margin:"16px 0"}}>
           <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:20,fontWeight:700}}>{follows.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>Suivis</div></div>
           <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:20,fontWeight:700}}>{attending.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>J'y vais</div></div>
         </div>
-        {topGenres.length>0&&<div style={{display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap"}}>{topGenres.map(g=><span key={g} style={{padding:"3px 10px",background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.15)",fontSize:9,color:"#aaa",letterSpacing:1}}><GenreIcon name={g} size={12}/> {g}</span>)}</div>}
+        {topGenres.length>0&&<div style={{display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap"}}>{topGenres.map(g=><span key={g} style={{padding:"3px 10px",background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.15)",fontSize:9,color:"#aaa",letterSpacing:1,display:"flex",alignItems:"center",gap:4}}><GenreIcon name={g} size={12}/> {g}</span>)}</div>}
       </div>
 
       <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.15),transparent)",margin:"20px 0"}}/>
@@ -1770,6 +1764,15 @@ function UserProfile({user,social,nav,upcomingData,artistImages}) {
           </div>
         ))}
       </div>}
+
+      <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.15),transparent)",margin:"20px 0"}}/>
+
+      <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+        {role==="artist"&&<button className="bp" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={()=>nav("artist-dash")}>👑 Mon espace artiste</button>}
+        {role==="jury"&&<button className="bp" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={()=>nav("jury-dash")}>⭐ Mon espace juré</button>}
+        {role==="admin"&&<button className="bp" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={()=>nav("admin")}>🔑 Administration</button>}
+        <button className="bo" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={async()=>{await supabase.auth.signOut();nav("home");window.location.reload();}}>🚪 Déconnexion</button>
+      </div>
     </div>
   );
 }
@@ -1889,7 +1892,7 @@ export default function App() {
       {page==="become-jury"&&<BecomeJury nav={nav}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
-      {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages}/>}
+      {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages} role={role} userArtistName={userArtistName}/>}
       {page==="jury-dash"&&role==="jury"&&<JuryDash user={user}/>}
       {page==="artist-dash"&&role==="artist"&&<ArtistDash user={user} artistName={userArtistName} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="admin"&&role==="admin"&&<AdminDash upcomingData={upcomingData} pastData={pastData} onRefresh={async()=>{
