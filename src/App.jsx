@@ -973,8 +973,8 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
     try{
       const{data,error}=await supabase.auth.signInWithPassword({email,password});
       if(error){setError("Email ou mot de passe incorrect");return;}
-      const{data:profile}=await supabase.from("profiles").select("role,name").eq("id",data.user.id).single();
-      onLogin(profile?.role||"user",data.user);
+      const{data:profile}=await supabase.from("profiles").select("role,name,artist_name").eq("id",data.user.id).single();
+      onLogin(profile?.role||"user",data.user,profile?.artist_name||null);
     }catch(e){setError("Erreur de connexion");}
     finally{setLoading(false);}
   };
@@ -1327,6 +1327,132 @@ www.cnil.fr`},
   );
 }
 
+function ArtistDash({user,artistName,artistImages={},upcomingData=[]}) {
+  const [moments,setMoments]=useState([]);
+  const [showUpload,setShowUpload]=useState(false);
+  const [caption,setCaption]=useState("");
+  const [concertTag,setConcertTag]=useState("");
+  const [videoFile,setVideoFile]=useState(null);
+  const [uploading,setUploading]=useState(false);
+  const [toast,setToast]=useState("");
+  const [followersCount,setFollowersCount]=useState(0);
+  const show=msg=>{setToast(msg);setTimeout(()=>setToast(""),2500);};
+
+  const myConcerts=upcomingData.filter(c=>c.artist===artistName);
+
+  useEffect(()=>{
+    async function load(){
+      const{data:m}=await supabase.from("moments").select("*").eq("artist_name",artistName).order("created_at",{ascending:false});
+      if(m)setMoments(m);
+      const{data:f}=await supabase.from("user_follows").select("id").eq("artist_name",artistName);
+      if(f)setFollowersCount(f.length);
+    }
+    if(artistName)load();
+  },[artistName]);
+
+  const uploadMoment=async()=>{
+    if(!videoFile){show("Sélectionne une vidéo");return;}
+    setUploading(true);
+    try{
+      const ext=videoFile.name.split(".").pop();
+      const path=`${artistName.replace(/\s/g,"_")}/${Date.now()}.${ext}`;
+      const{error:upErr}=await supabase.storage.from("moments").upload(path,videoFile);
+      if(upErr){show("Erreur upload");setUploading(false);return;}
+      const{data:urlData}=supabase.storage.from("moments").getPublicUrl(path);
+      await supabase.from("moments").insert({
+        artist_name:artistName,
+        user_id:user.id,
+        video_url:urlData.publicUrl,
+        caption,
+        concert_tag:concertTag||null
+      });
+      show("Moment publié ✓");
+      setCaption("");setConcertTag("");setVideoFile(null);setShowUpload(false);
+      const{data:m}=await supabase.from("moments").select("*").eq("artist_name",artistName).order("created_at",{ascending:false});
+      if(m)setMoments(m);
+    }catch(e){show("Erreur");}
+    finally{setUploading(false);}
+  };
+
+  return (
+    <div style={{padding:"100px 20px 80px",maxWidth:700,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <div style={{margin:"0 auto 12px"}}><ArtistImg name={artistName} size={72} images={artistImages}/></div>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:4}}>
+          <h1 className="fd" style={{fontSize:"clamp(24px,5vw,36px)",fontWeight:400,letterSpacing:2}}>{artistName}</h1>
+          <CrownBadge size={22}/>
+        </div>
+        <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>Artiste certifié CROWDN</p>
+        <div style={{display:"flex",gap:24,justifyContent:"center",margin:"16px 0"}}>
+          <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:22,fontWeight:700}}>{followersCount}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>Followers</div></div>
+          <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:22,fontWeight:700}}>{moments.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>Moments</div></div>
+          <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:22,fontWeight:700}}>{myConcerts.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>Concerts</div></div>
+        </div>
+      </div>
+
+      <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.2),transparent)",margin:"20px 0"}}/>
+
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>Mes Moments</p>
+        <button className="bp" style={{fontSize:9,padding:"8px 16px"}} onClick={()=>setShowUpload(!showUpload)}>+ Publier un Moment</button>
+      </div>
+
+      {showUpload&&(
+        <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.2)",padding:20,marginBottom:16}}>
+          <p className="sl" style={{marginBottom:12}}>Nouveau Moment live</p>
+          <label onClick={()=>document.getElementById("moment-video").click()} style={{display:"flex",alignItems:"center",gap:12,padding:"14px 18px",background:"rgba(201,168,76,0.06)",border:"1px dashed rgba(201,168,76,0.3)",cursor:"pointer",marginBottom:10}}>
+            <input id="moment-video" type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFile(e.target.files[0]||null)}/>
+            <span style={{fontSize:22}}>{videoFile?"✅":"🎬"}</span>
+            <div><p style={{fontSize:11,fontWeight:600,color:videoFile?"#4CC864":GOLD}}>{videoFile?.name||"Sélectionner une vidéo"}</p><p style={{fontSize:9,color:"#666"}}>MP4, MOV — max 100MB</p></div>
+          </label>
+          <input className="ifield" placeholder="Caption (ex: Backstage Accor Arena 🔥)" value={caption} onChange={e=>setCaption(e.target.value)} style={{marginBottom:8}}/>
+          <select className="ifield" style={{cursor:"pointer",marginBottom:12}} value={concertTag} onChange={e=>setConcertTag(e.target.value)}>
+            <option value="">Lier à un concert (optionnel)</option>
+            {myConcerts.map(c=><option key={c.id} value={`${c.venue} - ${c.date}`}>{c.venue} — {c.date}</option>)}
+          </select>
+          <div style={{display:"flex",gap:10}}>
+            <button className="bp" style={{fontSize:10,padding:"10px 20px",opacity:uploading?0.6:1}} onClick={uploadMoment} disabled={uploading}>{uploading?"Upload en cours...":"Publier ✓"}</button>
+            <button className="bo" style={{fontSize:10,padding:"10px 20px"}} onClick={()=>setShowUpload(false)}>Annuler</button>
+          </div>
+        </div>
+      )}
+
+      {moments.length===0&&!showUpload&&<p style={{textAlign:"center",color:"#555",padding:32,fontSize:12}}>Aucun Moment publié. Partage ton premier contenu live !</p>}
+      {moments.map(m=>(
+        <div key={m.id} style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",padding:14,marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div>
+              <p style={{fontWeight:600,fontSize:12}}>{m.caption||"Moment live"}</p>
+              {m.concert_tag&&<p style={{fontSize:10,color:"#888"}}>📍 {m.concert_tag}</p>}
+            </div>
+            <div style={{textAlign:"right"}}>
+              <p style={{fontSize:10,color:GOLD}}>{m.views} vues · {m.likes} likes</p>
+              <p style={{fontSize:9,color:"#555"}}>{new Date(m.created_at).toLocaleDateString("fr-FR")}</p>
+            </div>
+          </div>
+          <video src={m.video_url} style={{width:"100%",maxHeight:200,objectFit:"cover",background:"#111"}} controls preload="metadata"/>
+        </div>
+      ))}
+
+      <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.2),transparent)",margin:"20px 0"}}/>
+
+      <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:12}}>Mes concerts à venir</p>
+      {myConcerts.length===0?<p style={{textAlign:"center",color:"#555",padding:20,fontSize:12}}>Aucun concert programmé</p>:
+      myConcerts.map(c=>(
+        <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",marginBottom:6}}>
+          <div style={{flex:1}}>
+            <p style={{fontWeight:600,fontSize:13}}>{c.venue}</p>
+            <p style={{fontSize:10,color:"#888"}}>{c.date} · {c.city}</p>
+          </div>
+          <span className="tag" style={{fontSize:8}}>{c.category}</span>
+        </div>
+      ))}
+
+      {toast&&<div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
 function JuryDash({user}) {
   const [scores,setScores]=useState([7,8,7,9,8,8]);
   const [comment,setComment]=useState("");
@@ -1653,6 +1779,7 @@ export default function App() {
   const [sel,setSel]=useState(null);
   const [role,setRole]=useState(null);
   const [user,setUser]=useState(null);
+  const [userArtistName,setUserArtistName]=useState(null);
   const [genreFilter,setGenreFilter]=useState(null);
   const [artistName,setArtistName]=useState(null);
   const [upcomingData,setUpcomingData]=useState(UPCOMING_DEFAULT);
@@ -1665,8 +1792,8 @@ export default function App() {
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{
       if(session){
-        supabase.from("profiles").select("role,name").eq("id",session.user.id).single()
-          .then(({data:profile})=>{setUser(session.user);setRole(profile?.role||"user");});
+        supabase.from("profiles").select("role,name,artist_name").eq("id",session.user.id).single()
+          .then(({data:profile})=>{setUser(session.user);setRole(profile?.role||"user");setUserArtistName(profile?.artist_name||null);});
       }
     });
     const{data:{subscription}}=supabase.auth.onAuthStateChange((_,session)=>{
@@ -1724,6 +1851,7 @@ export default function App() {
     {key:"how-it-works",label:"Info",icon:"💡"},
     ...(!role?[{key:"become-jury",label:"Jury",icon:"👑"}]:[]),
     ...(role==="jury"?[{key:"jury-dash",label:"Mon espace",icon:"⭐"}]:[]),
+    ...(role==="artist"?[{key:"artist-dash",label:"Mon espace",icon:"👑"}]:[]),
     ...(role==="admin"?[{key:"admin",label:"Admin",icon:"🔑"}]:[]),
   ];
 
@@ -1749,7 +1877,7 @@ export default function App() {
       </nav>
 
       {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData} artistImages={artistImages}/>}
-      {page==="login"&&<Login nav={nav} onLogin={(r,u)=>{setRole(r);setUser(u);setWantsJuryLogin(false);if(r==="jury")nav("jury-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
+      {page==="login"&&<Login nav={nav} onLogin={(r,u,an)=>{setRole(r);setUser(u);setUserArtistName(an);setWantsJuryLogin(false);if(r==="artist")nav("artist-dash");else if(r==="jury")nav("jury-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
       {page==="upcoming"&&<UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData} artistImages={artistImages}/>}
       {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages} social={social} user={user}/>}
       {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
@@ -1759,6 +1887,7 @@ export default function App() {
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages}/>}
       {page==="jury-dash"&&role==="jury"&&<JuryDash user={user}/>}
+      {page==="artist-dash"&&role==="artist"&&<ArtistDash user={user} artistName={userArtistName} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="admin"&&role==="admin"&&<AdminDash upcomingData={upcomingData} pastData={pastData} onRefresh={async()=>{
         const{data:upcoming}=await supabase.from("upcoming_concerts").select("*").order("id");
         if(upcoming&&upcoming.length>0)setUpcomingData(upcoming.map(c=>({...c,daysLeft:daysUntil(c.date)})));
@@ -1801,6 +1930,7 @@ export default function App() {
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
         {role&&<button className={`mni ${page==="profile"?"active":""}`} onClick={()=>nav("profile")}><span style={{fontSize:18}}>👤</span>Mon profil</button>}
         {role==="jury"&&<button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon espace</button>}
+        {role==="artist"&&<button className={`mni ${page==="artist-dash"?"active":""}`} onClick={()=>nav("artist-dash")}><span style={{fontSize:18}}>👑</span>Mon espace</button>}
         {role==="admin"&&<button className={`mni ${page==="admin"?"active":""}`} onClick={()=>nav("admin")}><span style={{fontSize:18}}>🔑</span>Admin</button>}
         {role&&<button className="mni" onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}><span style={{fontSize:18}}>🚪</span>Quitter</button>}
       </div>
