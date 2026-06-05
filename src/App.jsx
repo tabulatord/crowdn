@@ -11,6 +11,7 @@ const GOLD_LIGHT = "#E8C96A";
 const GOLD_DARK = "#8B6914";
 const BG = "#0A0A0A";
 const BG2 = "#111111";
+const ADMIN_EMAIL = "ltabula@me.com";
 
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,700&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
@@ -1354,7 +1355,12 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
         return;
       }
       const{data:profile}=await supabase.from("profiles").select("role,name,artist_name").eq("id",data.user.id).single();
-      onLogin(profile?.role||"user",data.user,profile?.artist_name||null);
+      let finalRole=profile?.role||"user";
+      if(data.user.email===ADMIN_EMAIL&&finalRole!=="admin"){
+        await supabase.from("profiles").update({role:"admin"}).eq("id",data.user.id);
+        finalRole="admin";
+      }
+      onLogin(finalRole,data.user,profile?.artist_name||null);
     }catch(e){setError("Erreur de connexion");}
     finally{setLoading(false);}
   };
@@ -1966,6 +1972,8 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
   const [newConcert,setNewConcert]=useState({artist:"",date:"",city:"",venue:"",category:"Olympia Class",genre:"Hip-Hop",img:"🎤"});
   const [saving,setSaving]=useState(false);
   const [suggestions,setSuggestions]=useState([]);
+  const [users,setUsers]=useState([]);
+  const [certifiedList,setCertifiedList]=useState([]);
   const show=msg=>{setToast(msg);setTimeout(()=>setToast(""),2500);};
 
   useEffect(()=>{
@@ -1974,6 +1982,10 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
       if(data)setApplications(data);
       const{data:sug}=await supabase.from("concert_suggestions").select("*").eq("status","pending").order("created_at",{ascending:false});
       if(sug)setSuggestions(sug);
+      const{data:usrs}=await supabase.from("profiles").select("*").order("name");
+      if(usrs)setUsers(usrs);
+      const{data:cert}=await supabase.from("certified_artists").select("*");
+      if(cert)setCertifiedList(cert);
       setLoading(false);
     }
     fetchApps();
@@ -1991,6 +2003,26 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
     await supabase.from("concert_suggestions").update({status:"rejected"}).eq("id",id);
     setSuggestions(prev=>prev.filter(x=>x.id!==id));
     show("Suggestion refusée");
+  };
+
+  const changeRole=async(userId,newRole,artistName)=>{
+    const update={role:newRole};
+    if(newRole==="artist"&&artistName)update.artist_name=artistName;
+    if(newRole!=="artist")update.artist_name=null;
+    await supabase.from("profiles").update(update).eq("id",userId);
+    if(newRole==="artist"&&artistName){
+      await supabase.from("certified_artists").upsert({artist_name:artistName,certification_proof:"admin_certified",notes:"Certifié via admin"},{onConflict:"artist_name"});
+      const{data:cert}=await supabase.from("certified_artists").select("*");
+      if(cert)setCertifiedList(cert);
+    }
+    setUsers(prev=>prev.map(u=>u.id===userId?{...u,role:newRole,artist_name:newRole==="artist"?artistName:null}:u));
+    show(`Rôle changé → ${newRole} ✓`);
+  };
+
+  const removeCertification=async(artistName)=>{
+    await supabase.from("certified_artists").delete().eq("artist_name",artistName);
+    setCertifiedList(prev=>prev.filter(c=>c.artist_name!==artistName));
+    show("Certification retirée ✓");
   };
 
   const updateStatus=async(id,status)=>{
@@ -2085,8 +2117,8 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
         ))}
       </div>
       <div style={{display:"flex",borderBottom:"1px solid rgba(201,168,76,0.12)",marginBottom:24}}>
-        {["upcoming","passés","jurés","suggestions"].map(t=>(
-          <button key={t} style={{padding:"12px 22px",fontFamily:"'Montserrat',sans-serif",fontWeight:600,fontSize:10,letterSpacing:2,textTransform:"uppercase",background:"none",border:"none",borderBottom:tab===t?`2px solid ${GOLD}`:"2px solid transparent",color:tab===t?GOLD:"#666",cursor:"pointer",transition:"all 0.2s",marginBottom:-1}} onClick={()=>setTab(t)}>{t}{t==="suggestions"&&suggestions.length>0?` (${suggestions.length})`:""}</button>
+        {["upcoming","passés","jurés","suggestions","utilisateurs"].map(t=>(
+          <button key={t} style={{padding:"12px 22px",fontFamily:"'Montserrat',sans-serif",fontWeight:600,fontSize:10,letterSpacing:2,textTransform:"uppercase",background:"none",border:"none",borderBottom:tab===t?`2px solid ${GOLD}`:"2px solid transparent",color:tab===t?GOLD:"#666",cursor:"pointer",transition:"all 0.2s",marginBottom:-1}} onClick={()=>setTab(t)}>{t}{t==="suggestions"&&suggestions.length>0?` (${suggestions.length})`:""}{t==="utilisateurs"?` (${users.length})`:""}</button>
         ))}
       </div>
       {tab==="upcoming"&&(
@@ -2179,6 +2211,50 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
               </div>
             ))}
           </div>}
+        </div>
+      )}
+      {tab==="utilisateurs"&&(
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+            <p style={{fontSize:11,color:"#888"}}>{users.length} utilisateur(s)</p>
+            <div style={{display:"flex",gap:8}}>
+              {["tous","user","jury","artist","admin"].map(f=>(
+                <button key={f} style={{padding:"4px 10px",fontSize:8,fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif",textTransform:"uppercase",background:"none",border:`1px solid ${tab===f?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.08)"}`,color:"#888",cursor:"pointer"}} onClick={()=>{}}>{f}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {users.map(u=>{
+              const isCert=certifiedList.some(c=>c.artist_name===u.artist_name);
+              const roleColors={user:"#888",jury:"#4CC864",artist:GOLD,admin:"#FF5050"};
+              return (
+              <div key={u.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",background:BG2,border:"1px solid rgba(201,168,76,0.06)"}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,color:GOLD,fontWeight:700}}>{(u.name||u.email||"?").slice(0,2).toUpperCase()}</div>
+                <div style={{flex:1}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <span style={{fontWeight:600,fontSize:12}}>{u.name||"—"}</span>
+                    {u.role==="artist"&&isCert&&<CrownBadge size={12}/>}
+                    <span style={{padding:"2px 8px",fontSize:7,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",border:`1px solid ${roleColors[u.role]||"#888"}`,color:roleColors[u.role]||"#888"}}>{u.role}</span>
+                  </div>
+                  <p style={{fontSize:10,color:"#666"}}>{u.email}{u.artist_name?` · Artiste : ${u.artist_name}`:""}</p>
+                </div>
+                <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
+                  {u.role!=="admin"&&<select style={{padding:"4px 8px",fontSize:8,fontWeight:700,fontFamily:"'Montserrat',sans-serif",background:"#0A0A0A",border:"1px solid rgba(201,168,76,0.3)",color:GOLD,cursor:"pointer"}} value={u.role} onChange={e=>{
+                    const newRole=e.target.value;
+                    if(newRole==="artist"){
+                      const an=prompt("Nom d'artiste :");
+                      if(an)changeRole(u.id,newRole,an);
+                    }else{changeRole(u.id,newRole);}
+                  }}>
+                    <option value="user">User</option>
+                    <option value="jury">Jury</option>
+                    <option value="artist">Artiste</option>
+                  </select>}
+                  {u.role==="artist"&&isCert&&<button style={{padding:"4px 8px",fontSize:7,fontWeight:700,fontFamily:"'Montserrat',sans-serif",background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF5050",cursor:"pointer"}} onClick={()=>removeCertification(u.artist_name)}>✗ Décertifier</button>}
+                </div>
+              </div>
+            );})}
+          </div>
         </div>
       )}
       {toast&&<div className="toast">{toast}</div>}
@@ -2283,7 +2359,15 @@ export default function App() {
     supabase.auth.getSession().then(({data:{session}})=>{
       if(session){
         supabase.from("profiles").select("role,name,artist_name").eq("id",session.user.id).single()
-          .then(({data:profile})=>{setUser(session.user);setRole(profile?.role||"user");setUserArtistName(profile?.artist_name||null);});
+          .then(async({data:profile})=>{
+            setUser(session.user);
+            let r=profile?.role||"user";
+            if(session.user.email===ADMIN_EMAIL&&r!=="admin"){
+              await supabase.from("profiles").update({role:"admin"}).eq("id",session.user.id);
+              r="admin";
+            }
+            setRole(r);setUserArtistName(profile?.artist_name||null);
+          });
       }
     });
     const{data:{subscription}}=supabase.auth.onAuthStateChange((event,session)=>{
