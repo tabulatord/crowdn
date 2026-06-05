@@ -134,14 +134,15 @@ function daysUntil(dateStr) {
   return diff > 0 ? diff : 0;
 }
 
-function getTicketUrl(artist) {
-  return `https://www.fnacspectacles.com/recherche/${encodeURIComponent(artist)}.htm`;
+function getTicketUrl(artist, venue, city) {
+  const q = encodeURIComponent(`${artist} ${venue||""} ${city||""}`.trim());
+  return `https://www.fnacspectacles.com/recherche/${q}.htm`;
 }
 
-function TicketButton({artist,size="normal"}) {
+function TicketButton({artist,venue,city,size="normal"}) {
   const sm=size==="small";
   return (
-    <a href={getTicketUrl(artist)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{display:"inline-flex",alignItems:"center",gap:sm?4:6,padding:sm?"4px 10px":"8px 18px",background:"linear-gradient(135deg,#8B6914,#C9A84C)",color:"#000",fontSize:sm?8:10,fontWeight:700,letterSpacing:sm?1:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif",cursor:"pointer"}}>🎫 Réserver</a>
+    <a href={getTicketUrl(artist,venue,city)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{display:"inline-flex",alignItems:"center",gap:sm?4:6,padding:sm?"4px 10px":"8px 18px",background:"linear-gradient(135deg,#8B6914,#C9A84C)",color:"#000",fontSize:sm?8:10,fontWeight:700,letterSpacing:sm?1:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif",cursor:"pointer"}}>🎫 Réserver</a>
   );
 }
 
@@ -426,7 +427,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
                         <p style={{fontSize:11,color:"#888",marginTop:2}}>{c.date} · {c.venue} · {c.city}</p>
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
-                        <TicketButton artist={c.artist} size="small"/>
+                        <TicketButton artist={c.artist} venue={c.venue} city={c.city} size="small"/>
                         <div style={{textAlign:"right"}}><span className="tag" style={{fontSize:7}}>{c.category}</span><div style={{fontSize:10,color:GOLD,marginTop:3}}>{c.daysLeft}j</div></div>
                       </div>
                     </div>
@@ -452,7 +453,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
                       <div style={{padding:"12px 16px"}}>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                           <div><h3 style={{fontSize:14,fontWeight:700,letterSpacing:1,marginBottom:2}}>{c.artist}</h3><p style={{fontSize:10,color:"#888"}}>{c.date} · {c.city}</p></div>
-                          <TicketButton artist={c.artist} size="small"/>
+                          <TicketButton artist={c.artist} venue={c.venue} city={c.city} size="small"/>
                         </div>
                       </div>
                     </div>
@@ -483,7 +484,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
                         <p style={{fontSize:9,color:"#666"}}>{c.venue} · {c.city}</p>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
                           <span className="tag" style={{fontSize:7}}>{c.genre}</span>
-                          <TicketButton artist={c.artist} size="small"/>
+                          <TicketButton artist={c.artist} venue={c.venue} city={c.city} size="small"/>
                         </div>
                       </div>
                     </div>
@@ -719,7 +720,7 @@ function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div><p style={{fontSize:11,color:"#aaa"}}>{c.date}</p><p style={{fontSize:11,color:"#777"}}>{c.city} · {c.venue}</p></div>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
-                      <TicketButton artist={c.artist} size="small"/>
+                      <TicketButton artist={c.artist} venue={c.venue} city={c.city} size="small"/>
                       <span className="tag" style={{fontSize:8}}>{c.category}</span>
                     </div>
                   </div>
@@ -757,12 +758,12 @@ function UpcomingDetail({c,nav,artistImages={},social={},user}) {
           </div>
           {user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
             <button onClick={()=>social.toggleAttending?.(c.id)} style={{padding:"10px 24px",background:isAtt?"rgba(76,200,100,0.1)":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isAtt?"1px solid rgba(76,200,100,0.4)":"none",color:isAtt?"#4CC864":"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isAtt?"✓ J'y vais":"J'y vais"}</button>
-            <TicketButton artist={c.artist}/>
+            <TicketButton artist={c.artist} venue={c.venue} city={c.city}/>
             <button onClick={()=>social.toggleFollow?.(c.artist)} style={{padding:"10px 24px",background:"transparent",border:`1px solid ${isFollowing?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.15)"}`,color:isFollowing?GOLD:"#aaa",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
             <ShareButton artist={c.artist} date={c.date} venue={c.venue} city={c.city}/>
           </div>}
           {!user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-            <TicketButton artist={c.artist}/>
+            <TicketButton artist={c.artist} venue={c.venue} city={c.city}/>
             <ShareButton artist={c.artist} date={c.date} venue={c.venue} city={c.city}/>
             <button onClick={()=>nav("login")} className="bo" style={{padding:"10px 24px",fontSize:10,letterSpacing:2}}>Se connecter</button>
           </div>}
@@ -1058,7 +1059,7 @@ function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}
             <div key={c.id} className="cc" style={{marginBottom:10,cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}>
               <div style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px"}}>
                 <div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{c.date} · {c.city}</p><p style={{fontSize:11,color:"#888",marginTop:2}}>{c.venue}</p></div>
-                <TicketButton artist={c.artist} size="small"/>
+                <TicketButton artist={c.artist} venue={c.venue} city={c.city} size="small"/>
                 <span className="tag" style={{fontSize:8}}>{c.category}</span>
               </div>
             </div>
