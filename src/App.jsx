@@ -630,40 +630,62 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
 
 function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
   const [activeGenre,setActiveGenre]=useState(initialGenre||"Tous");
+  const [activeCat,setActiveCat]=useState("Toutes");
   const U=concerts||UPCOMING_DEFAULT;
   const allGenres=["Tous",...Array.from(new Set(U.map(c=>c.genre)))];
-  const filtered=activeGenre==="Tous"?U:U.filter(c=>c.genre===activeGenre);
+  const categories=["Toutes","Olympia Class","Zenith Class","Arena Class","Stadium Class"];
+  const filtered=U.filter(c=>(activeGenre==="Tous"||c.genre===activeGenre)&&(activeCat==="Toutes"||c.category===activeCat));
   return (
     <div style={{padding:"80px 0 80px",maxWidth:1400,margin:"0 auto"}}>
       <div style={{padding:"20px 32px 32px"}}>
         <p className="sl" style={{marginBottom:8}}>Programme</p>
         <h1 className="fd" style={{fontSize:"clamp(28px,5vw,44px)",fontWeight:400,letterSpacing:2}}>Concerts à venir</h1>
+        <p style={{fontSize:12,color:"#888",marginTop:8}}>{filtered.length} concert{filtered.length>1?"s":""}{activeGenre!=="Tous"?` · ${activeGenre}`:""}{activeCat!=="Toutes"?` · ${activeCat}`:""}</p>
       </div>
-      {/* Desktop: sidebar + contenu / Mobile: filtre en haut */}
       <div className="desktop-two-col" style={{display:"grid",gap:0,alignItems:"start"}}>
-        {/* Sidebar genres — desktop */}
         <div className="desktop-sidebar" style={{padding:"0 24px 0 32px",position:"sticky",top:80}}>
-          <p className="sl" style={{marginBottom:16,fontSize:9}}>Genres</p>
-          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+          <p className="sl" style={{marginBottom:12,fontSize:9}}>Genres</p>
+          <div style={{display:"flex",flexDirection:"column",gap:4,marginBottom:20}}>
             {allGenres.map(g=>(
               <button key={g} onClick={()=>setActiveGenre(g)}
-                style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:activeGenre===g?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeGenre===g?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeGenre===g?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>
+                style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:activeGenre===g?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeGenre===g?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeGenre===g?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>
                 {g!=="Tous"&&<GenreIcon name={g} size={16}/>}
                 {g}
               </button>
             ))}
           </div>
+          <p className="sl" style={{marginBottom:12,fontSize:9}}>Taille de salle</p>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {categories.map(c=>{
+              const labels={"Olympia Class":"O","Zenith Class":"Z","Arena Class":"A","Stadium Class":"S"};
+              const sizes={"Olympia Class":"800 — 3 000","Zenith Class":"3 000 — 15 000","Arena Class":"15 000 — 40 000","Stadium Class":"40 000+"};
+              return (
+              <button key={c} onClick={()=>setActiveCat(c)}
+                style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:activeCat===c?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeCat===c?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeCat===c?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>
+                {labels[c]?<span style={{width:22,height:22,border:`1px solid ${activeCat===c?GOLD:"rgba(255,255,255,0.15)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,fontFamily:"'Cormorant Garamond',serif"}}>{labels[c]}</span>:"🎵"}
+                <div><span style={{display:"block"}}>{c==="Toutes"?c:c.replace(" Class","")}</span>{sizes[c]&&<span style={{fontSize:7,color:"#555",fontWeight:400,letterSpacing:0,textTransform:"none"}}>{sizes[c]} places</span>}</div>
+              </button>
+            );})}
+          </div>
         </div>
 
-        {/* Contenu */}
         <div style={{padding:"0 32px"}}>
-          {/* Filtre mobile */}
-          <div className="genre-filter" style={{marginBottom:24,display:"flex"}}>
+          {/* Filtres mobile — genres */}
+          <div className="genre-filter" style={{marginBottom:12,display:"flex"}}>
             {allGenres.map(g=>(
               <button key={g} className={`gf-btn ${activeGenre===g?"active":""}`} onClick={()=>setActiveGenre(g)}>
                 {g!=="Tous"&&<span style={{marginRight:6}}><GenreIcon name={g} size={14}/></span>}{g}
               </button>
             ))}
+          </div>
+          {/* Filtres mobile — catégories */}
+          <div className="genre-filter" style={{marginBottom:24,display:"flex"}}>
+            {categories.map(c=>{
+              const labels={"Olympia Class":"O","Zenith Class":"Z","Arena Class":"A","Stadium Class":"S"};
+              return <button key={c} className={`gf-btn ${activeCat===c?"active":""}`} onClick={()=>setActiveCat(c)} style={{fontSize:10}}>
+                {labels[c]||"Toutes"}
+              </button>;
+            })}
           </div>
           <div className="concerts-grid" style={{display:"grid",gap:16}}>
             {filtered.map((c,i)=>(
