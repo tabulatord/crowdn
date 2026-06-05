@@ -145,6 +145,23 @@ function TicketButton({artist,size="normal"}) {
   );
 }
 
+function ShareButton({artist,date,venue,city,size="normal"}) {
+  const sm=size==="small";
+  const text=`${artist} — ${date} à ${venue}, ${city} 🎤 Découvre sur CROWDN`;
+  const url="https://crowdn.fr";
+  const handleShare=async(e)=>{
+    e.stopPropagation();
+    if(navigator.share){
+      try{await navigator.share({title:`${artist} sur CROWDN`,text,url});}catch(e){}
+    }else{
+      try{await navigator.clipboard.writeText(`${text}\n${url}`);alert("Lien copié !");}catch(e){prompt("Copie ce lien :",`${text} ${url}`);}
+    }
+  };
+  return (
+    <button onClick={handleShare} style={{display:"inline-flex",alignItems:"center",gap:sm?4:6,padding:sm?"4px 10px":"8px 18px",background:"transparent",border:"1px solid rgba(255,255,255,0.15)",color:"#aaa",fontSize:sm?8:10,fontWeight:700,letterSpacing:sm?1:2,textTransform:"uppercase",fontFamily:"'Montserrat',sans-serif",cursor:"pointer"}}>↗ Partager</button>
+  );
+}
+
 const ARTISTS = {
   "Indochine":{bio:"Groupe de rock new wave français fondé en 1981.",spotify:"https://open.spotify.com/artist/4YzZZvLCNm7FpGbQmEUxlR",instagram:"https://instagram.com/indochine_official",tiktok:"https://tiktok.com/@indochine_officiel"},
   "Imagine Dragons":{bio:"Groupe de rock américain, l'un des plus streamés au monde.",spotify:"https://open.spotify.com/artist/53XhwfbYqKCa1cC15pYq2q",instagram:"https://instagram.com/imaginedragons",tiktok:"https://tiktok.com/@imaginedragons"},
@@ -742,9 +759,11 @@ function UpcomingDetail({c,nav,artistImages={},social={},user}) {
             <button onClick={()=>social.toggleAttending?.(c.id)} style={{padding:"10px 24px",background:isAtt?"rgba(76,200,100,0.1)":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isAtt?"1px solid rgba(76,200,100,0.4)":"none",color:isAtt?"#4CC864":"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isAtt?"✓ J'y vais":"J'y vais"}</button>
             <TicketButton artist={c.artist}/>
             <button onClick={()=>social.toggleFollow?.(c.artist)} style={{padding:"10px 24px",background:"transparent",border:`1px solid ${isFollowing?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.15)"}`,color:isFollowing?GOLD:"#aaa",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
+            <ShareButton artist={c.artist} date={c.date} venue={c.venue} city={c.city}/>
           </div>}
           {!user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
             <TicketButton artist={c.artist}/>
+            <ShareButton artist={c.artist} date={c.date} venue={c.venue} city={c.city}/>
             <button onClick={()=>nav("login")} className="bo" style={{padding:"10px 24px",fontSize:10,letterSpacing:2}}>Se connecter</button>
           </div>}
         </div>
