@@ -1637,6 +1637,11 @@ function ArtistDash({user,artistName,artistImages={},upcomingData=[]}) {
   const [uploading,setUploading]=useState(false);
   const [toast,setToast]=useState("");
   const [followersCount,setFollowersCount]=useState(0);
+  const [showSuggest,setShowSuggest]=useState(false);
+  const [sugDate,setSugDate]=useState("");
+  const [sugCity,setSugCity]=useState("");
+  const [sugVenue,setSugVenue]=useState("");
+  const [sugCat,setSugCat]=useState("Olympia Class");
   const show=msg=>{setToast(msg);setTimeout(()=>setToast(""),2500);};
 
   const myConcerts=upcomingData.filter(c=>c.artist===artistName);
@@ -1737,7 +1742,36 @@ function ArtistDash({user,artistName,artistImages={},upcomingData=[]}) {
 
       <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.2),transparent)",margin:"20px 0"}}/>
 
-      <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:12}}>Mes concerts à venir</p>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700}}>Mes concerts à venir</p>
+        <button className="bo" style={{fontSize:8,padding:"6px 12px"}} onClick={()=>{const f=document.getElementById("suggest-form");if(f)f.style.display=f.style.display==="none"?"block":"block";setShowSuggest&&setShowSuggest(true);}}>+ Ajouter une date</button>
+      </div>
+      {showSuggest&&(
+        <div id="suggest-form" style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.2)",padding:20,marginBottom:16}}>
+          <p className="sl" style={{marginBottom:12}}>Suggérer un concert</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
+            <input className="ifield" type="date" value={sugDate} onChange={e=>setSugDate(e.target.value)}/>
+            <input className="ifield" placeholder="Ville" value={sugCity} onChange={e=>setSugCity(e.target.value)}/>
+            <input className="ifield" placeholder="Salle" value={sugVenue} onChange={e=>setSugVenue(e.target.value)}/>
+            <select className="ifield" value={sugCat} onChange={e=>setSugCat(e.target.value)} style={{cursor:"pointer"}}>
+              <option>Olympia Class</option><option>Zenith Class</option><option>Arena Class</option><option>Stadium Class</option>
+            </select>
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button className="bp" style={{fontSize:10,padding:"10px 20px"}} onClick={async()=>{
+              if(!sugDate||!sugCity||!sugVenue){show("Remplis tous les champs");return;}
+              const months={"01":"Jan","02":"Fév","03":"Mar","04":"Avr","05":"Mai","06":"Juin","07":"Juil","08":"Août","09":"Sep","10":"Oct","11":"Nov","12":"Déc"};
+              const d=sugDate.split("-");
+              const dateFr=`${parseInt(d[2])} ${months[d[1]]} ${d[0]}`;
+              const genre=myConcerts[0]?.genre||"Pop";
+              await supabase.from("concert_suggestions").insert({artist_name:artistName,user_id:user.id,date:dateFr,city:sugCity,venue:sugVenue,category:sugCat,genre});
+              show("Concert suggéré — en attente de validation ✓");
+              setSugDate("");setSugCity("");setSugVenue("");setShowSuggest(false);
+            }}>Envoyer</button>
+            <button className="bo" style={{fontSize:10,padding:"10px 20px"}} onClick={()=>setShowSuggest(false)}>Annuler</button>
+          </div>
+        </div>
+      )}
       {myConcerts.length===0?<p style={{textAlign:"center",color:"#555",padding:20,fontSize:12}}>Aucun concert programmé</p>:
       myConcerts.map(c=>(
         <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",marginBottom:6}}>
@@ -1836,16 +1870,33 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
   const [showAddForm,setShowAddForm]=useState(false);
   const [newConcert,setNewConcert]=useState({artist:"",date:"",city:"",venue:"",category:"Olympia Class",genre:"Hip-Hop",img:"🎤"});
   const [saving,setSaving]=useState(false);
+  const [suggestions,setSuggestions]=useState([]);
   const show=msg=>{setToast(msg);setTimeout(()=>setToast(""),2500);};
 
   useEffect(()=>{
     async function fetchApps(){
       const{data}=await supabase.from("jury_applications").select("*").order("created_at",{ascending:false});
       if(data)setApplications(data);
+      const{data:sug}=await supabase.from("concert_suggestions").select("*").eq("status","pending").order("created_at",{ascending:false});
+      if(sug)setSuggestions(sug);
       setLoading(false);
     }
     fetchApps();
   },[]);
+
+  const approveSuggestion=async(s)=>{
+    await supabase.from("upcoming_concerts").insert({artist:s.artist_name,date:s.date,city:s.city,venue:s.venue,category:s.category,genre:s.genre,img:"🎵"});
+    await supabase.from("concert_suggestions").update({status:"approved"}).eq("id",s.id);
+    setSuggestions(prev=>prev.filter(x=>x.id!==s.id));
+    show("Concert approuvé ✓");
+    if(onRefresh)onRefresh();
+  };
+
+  const rejectSuggestion=async(id)=>{
+    await supabase.from("concert_suggestions").update({status:"rejected"}).eq("id",id);
+    setSuggestions(prev=>prev.filter(x=>x.id!==id));
+    show("Suggestion refusée");
+  };
 
   const updateStatus=async(id,status)=>{
     await supabase.from("jury_applications").update({status}).eq("id",id);
@@ -1939,8 +1990,8 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
         ))}
       </div>
       <div style={{display:"flex",borderBottom:"1px solid rgba(201,168,76,0.12)",marginBottom:24}}>
-        {["upcoming","passés","jurés"].map(t=>(
-          <button key={t} style={{padding:"12px 22px",fontFamily:"'Montserrat',sans-serif",fontWeight:600,fontSize:10,letterSpacing:2,textTransform:"uppercase",background:"none",border:"none",borderBottom:tab===t?`2px solid ${GOLD}`:"2px solid transparent",color:tab===t?GOLD:"#666",cursor:"pointer",transition:"all 0.2s",marginBottom:-1}} onClick={()=>setTab(t)}>{t}</button>
+        {["upcoming","passés","jurés","suggestions"].map(t=>(
+          <button key={t} style={{padding:"12px 22px",fontFamily:"'Montserrat',sans-serif",fontWeight:600,fontSize:10,letterSpacing:2,textTransform:"uppercase",background:"none",border:"none",borderBottom:tab===t?`2px solid ${GOLD}`:"2px solid transparent",color:tab===t?GOLD:"#666",cursor:"pointer",transition:"all 0.2s",marginBottom:-1}} onClick={()=>setTab(t)}>{t}{t==="suggestions"&&suggestions.length>0?` (${suggestions.length})`:""}</button>
         ))}
       </div>
       {tab==="upcoming"&&(
@@ -2009,6 +2060,30 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
           </div>
           )}
           {applications.length===0&&!loading&&<p style={{textAlign:"center",color:"#555",padding:40,fontSize:12}}>Aucune candidature pour le moment</p>}
+        </div>
+      )}
+      {tab==="suggestions"&&(
+        <div>
+          <p style={{fontSize:11,color:"#888",marginBottom:14}}>{suggestions.length} suggestion(s) en attente</p>
+          {suggestions.length===0?<p style={{textAlign:"center",color:"#555",padding:40,fontSize:12}}>Aucune suggestion pour le moment</p>:
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            {suggestions.map(s=>(
+              <div key={s.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",background:BG2,border:"1px solid rgba(201,168,76,0.08)"}}>
+                <div style={{flex:1}}>
+                  <p style={{fontWeight:700,fontSize:13}}>{s.artist_name}</p>
+                  <p style={{fontSize:11,color:"#888",marginTop:2}}>{s.date} · {s.city} · {s.venue}</p>
+                  <div style={{display:"flex",gap:6,marginTop:6}}>
+                    <span className="tag" style={{fontSize:8}}>{s.category}</span>
+                    <span style={{fontSize:9,color:"#666"}}>{s.genre}</span>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  <button className="bp" style={{fontSize:8,padding:"6px 12px"}} onClick={()=>approveSuggestion(s)}>✓ Approuver</button>
+                  <button style={{background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF5050",fontSize:8,padding:"6px 12px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>rejectSuggestion(s.id)}>✗ Refuser</button>
+                </div>
+              </div>
+            ))}
+          </div>}
         </div>
       )}
       {toast&&<div className="toast">{toast}</div>}
