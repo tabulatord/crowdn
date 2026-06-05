@@ -1268,7 +1268,16 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
   const [proDoc,setProDoc]=useState(null);
   const [genres,setGenres]=useState(["","","","",""]);
   const [motivation,setMotivation]=useState("");
+  const [honeypot,setHoneypot]=useState("");
+  const [formLoadTime]=useState(Date.now());
+  const [loginAttempts,setLoginAttempts]=useState(()=>{
+    const s=localStorage.getItem("crowdn_la");
+    if(s){const d=JSON.parse(s);if(d.lu&&Date.now()<d.lu)return d;return{c:0,lu:null};}
+    return{c:0,lu:null};
+  });
   const allGenres=GENRES.map(g=>g.name);
+  const isLocked=loginAttempts.lu&&Date.now()<loginAttempts.lu;
+  const lockMin=isLocked?Math.ceil((loginAttempts.lu-Date.now())/60000):0;
 
   const validatePassword=(pwd)=>{
     if(pwd.length<8) return "8 caractères minimum";
@@ -1277,12 +1286,30 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
     return null;
   };
 
+  const isBot=()=>honeypot||Date.now()-formLoadTime<2000;
+
   const handleLogin=async()=>{
+    if(isLocked){setError(`Trop de tentatives. Réessaie dans ${lockMin} min.`);return;}
     if(!email||!password){setError("Email et mot de passe requis");return;}
+    if(isBot()){setError("Vérification échouée");return;}
     setLoading(true);setError("");
     try{
       const{data,error}=await supabase.auth.signInWithPassword({email,password});
-      if(error){setError("Email ou mot de passe incorrect");return;}
+      if(error){
+        const nc=loginAttempts.c+1;
+        const nla=nc>=5?{c:nc,lu:Date.now()+5*60*1000}:{c:nc,lu:null};
+        setLoginAttempts(nla);localStorage.setItem("crowdn_la",JSON.stringify(nla));
+        if(nc>=5)setError("Trop de tentatives. Verrouillé 5 minutes.");
+        else setError(`Email ou mot de passe incorrect (${5-nc} essai(s) restant(s))`);
+        return;
+      }
+      localStorage.removeItem("crowdn_la");
+      setLoginAttempts({c:0,lu:null});
+      if(!data.user.email_confirmed_at){
+        setError("Vérifie ton email avant de te connecter. Un lien de confirmation t'a été envoyé.");
+        await supabase.auth.signOut();
+        return;
+      }
       const{data:profile}=await supabase.from("profiles").select("role,name,artist_name").eq("id",data.user.id).single();
       onLogin(profile?.role||"user",data.user,profile?.artist_name||null);
     }catch(e){setError("Erreur de connexion");}
@@ -1291,6 +1318,7 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
 
   const handleSignup=async()=>{
     if(!email||!password||!name){setError("Tous les champs sont requis");return;}
+    if(isBot()){setError("Vérification échouée");return;}
     const pwdErr=validatePassword(password);
     if(pwdErr){setError("Mot de passe : "+pwdErr);return;}
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setError("Email invalide");return;}
@@ -1384,6 +1412,8 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
           {mode==="signup"&&<input className="ifield" placeholder="Ton nom complet" value={name} onChange={e=>setName(e.target.value)}/>}
           <input className="ifield" placeholder="ton@email.com" type="email" value={email} onChange={e=>setEmail(e.target.value)}/>
           <input className="ifield" type="password" placeholder={mode==="signup"?"Mot de passe (8 car. + majuscule + chiffre)":"Mot de passe"} value={password} onChange={e=>setPassword(e.target.value)}/>
+          {/* Honeypot — invisible, seuls les bots le remplissent */}
+          <input type="text" value={honeypot} onChange={e=>setHoneypot(e.target.value)} style={{position:"absolute",left:"-9999px",opacity:0,height:0}} tabIndex={-1} autoComplete="off" aria-hidden="true"/>
           {mode==="signup"&&password.length>0&&(
             <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               <span style={{fontSize:9,padding:"2px 8px",background:password.length>=8?"rgba(76,200,100,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${password.length>=8?"rgba(76,200,100,0.3)":"rgba(255,50,50,0.3)"}`,color:password.length>=8?"#4CC864":"#FF5050"}}>{password.length>=8?"✓":"✗"} 8+ caractères</span>
@@ -1392,9 +1422,10 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
             </div>
           )}
         </div>
+        {isLocked&&<div style={{padding:"12px 14px",background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF6060",fontSize:11,marginBottom:16,textAlign:"center"}}>🔒 Compte verrouillé — réessaie dans {lockMin} minute(s)</div>}
         {error&&<div style={{padding:"10px 14px",background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF6060",fontSize:11,marginBottom:16}}>⚠️ {error}</div>}
         {success&&<div style={{padding:"10px 14px",background:"rgba(76,200,100,0.08)",border:"1px solid rgba(76,200,100,0.25)",color:"#4CC864",fontSize:11,marginBottom:16}}>✅ {success}</div>}
-        <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:loading?0.6:1}} onClick={mode==="login"?handleLogin:handleSignup} disabled={loading}>
+        <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,opacity:loading||isLocked?0.6:1}} onClick={mode==="login"?handleLogin:handleSignup} disabled={loading||isLocked}>
           {loading?"...":mode==="login"?"Connexion":"Créer mon compte →"}
         </button>
         {mode==="login"&&(
