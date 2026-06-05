@@ -2318,7 +2318,7 @@ export default function App() {
     {key:"home",label:"Accueil",icon:"🏠"},
     {key:"upcoming",label:"À venir",icon:"🎵"},
     {key:"past",label:"Passés",icon:"🎭"},
-    {key:"how-it-works",label:"Info",icon:"💡"},
+    {key:"become-jury",label:"Be a Jury",icon:"👑"},
     ...(!role?[{key:"become-jury",label:"Jury",icon:"👑"}]:[]),
     ...(role==="jury"?[{key:"jury-dash",label:"Mon espace",icon:"⭐"}]:[]),
     ...(role==="artist"?[{key:"artist-dash",label:"Mon espace",icon:"👑"}]:[]),
@@ -2417,8 +2417,7 @@ export default function App() {
         <button className={`mni ${page==="home"?"active":""}`} onClick={()=>nav("home")}><span style={{fontSize:18}}>🏠</span>Accueil</button>
         <button className={`mni ${page==="upcoming"?"active":""}`} onClick={()=>nav("upcoming")}><span style={{fontSize:18}}>🎵</span>À venir</button>
         <button className={`mni ${page==="past"?"active":""}`} onClick={()=>nav("past")}><span style={{fontSize:18}}>🎭</span>Passés</button>
-        <button className={`mni ${page==="how-it-works"?"active":""}`} onClick={()=>nav("how-it-works")}><span style={{fontSize:18}}>💡</span>Info</button>
-        {role!=="jury"&&role!=="artist"&&<button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Jury</button>}
+        <button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Be a Jury</button>
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
         {role&&<button className={`mni ${page==="profile"?"active":""}`} onClick={()=>nav("profile")}><span style={{fontSize:18}}>👤</span>Mon profil</button>}
         {role==="jury"&&<button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon espace</button>}
