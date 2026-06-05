@@ -134,6 +134,17 @@ function daysUntil(dateStr) {
   return diff > 0 ? diff : 0;
 }
 
+function getTicketUrl(artist) {
+  return `https://www.fnacspectacles.com/recherche/${encodeURIComponent(artist)}.htm`;
+}
+
+function TicketButton({artist,size="normal"}) {
+  const sm=size==="small";
+  return (
+    <a href={getTicketUrl(artist)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()} style={{display:"inline-flex",alignItems:"center",gap:sm?4:6,padding:sm?"4px 10px":"8px 18px",background:"linear-gradient(135deg,#8B6914,#C9A84C)",color:"#000",fontSize:sm?8:10,fontWeight:700,letterSpacing:sm?1:2,textTransform:"uppercase",textDecoration:"none",fontFamily:"'Montserrat',sans-serif",cursor:"pointer"}}>🎫 Réserver</a>
+  );
+}
+
 const ARTISTS = {
   "Indochine":{bio:"Groupe de rock new wave français fondé en 1981.",spotify:"https://open.spotify.com/artist/4YzZZvLCNm7FpGbQmEUxlR",instagram:"https://instagram.com/indochine_official",tiktok:"https://tiktok.com/@indochine_officiel"},
   "Imagine Dragons":{bio:"Groupe de rock américain, l'un des plus streamés au monde.",spotify:"https://open.spotify.com/artist/53XhwfbYqKCa1cC15pYq2q",instagram:"https://instagram.com/imaginedragons",tiktok:"https://tiktok.com/@imaginedragons"},
@@ -610,7 +621,10 @@ function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
                   <div className="gd" style={{marginBottom:10}}/>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                     <div><p style={{fontSize:11,color:"#aaa"}}>{c.date}</p><p style={{fontSize:11,color:"#777"}}>{c.city} · {c.venue}</p></div>
-                    <span className="tag" style={{fontSize:8}}>{c.category}</span>
+                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                      <TicketButton artist={c.artist} size="small"/>
+                      <span className="tag" style={{fontSize:8}}>{c.category}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -646,9 +660,13 @@ function UpcomingDetail({c,nav,artistImages={},social={},user}) {
           </div>
           {user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
             <button onClick={()=>social.toggleAttending?.(c.id)} style={{padding:"10px 24px",background:isAtt?"rgba(76,200,100,0.1)":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isAtt?"1px solid rgba(76,200,100,0.4)":"none",color:isAtt?"#4CC864":"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isAtt?"✓ J'y vais":"J'y vais"}</button>
+            <TicketButton artist={c.artist}/>
             <button onClick={()=>social.toggleFollow?.(c.artist)} style={{padding:"10px 24px",background:"transparent",border:`1px solid ${isFollowing?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.15)"}`,color:isFollowing?GOLD:"#aaa",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
           </div>}
-          {!user&&<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2}}>Se connecter</button>}
+          {!user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+            <TicketButton artist={c.artist}/>
+            <button onClick={()=>nav("login")} className="bo" style={{padding:"10px 24px",fontSize:10,letterSpacing:2}}>Se connecter</button>
+          </div>}
         </div>
         {/* Right */}
         <div>
@@ -941,6 +959,7 @@ function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}
             <div key={c.id} className="cc" style={{marginBottom:10,cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}>
               <div style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px"}}>
                 <div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{c.date} · {c.city}</p><p style={{fontSize:11,color:"#888",marginTop:2}}>{c.venue}</p></div>
+                <TicketButton artist={c.artist} size="small"/>
                 <span className="tag" style={{fontSize:8}}>{c.category}</span>
               </div>
             </div>
