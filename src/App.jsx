@@ -336,27 +336,41 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
   const P = past||PAST_DEFAULT;
   const follows=social?.follows||[];
   const followedConcerts=follows.length>0?U.filter(c=>follows.includes(c.artist)):[];
+
+  // Algorithme : genres des artistes suivis
+  const followedGenres=[];
+  followedConcerts.forEach(c=>{if(c.genre&&!followedGenres.includes(c.genre))followedGenres.push(c.genre);});
+
+  // Artistes similaires (même genres, pas suivis)
+  const similarConcerts=U.filter(c=>followedGenres.includes(c.genre)&&!follows.includes(c.artist));
+  const similarUnique=[];const seenSimilar=new Set();
+  similarConcerts.forEach(c=>{if(!seenSimilar.has(c.artist)){seenSimilar.add(c.artist);similarUnique.push(c);}});
+
+  // Découverte (autres genres, pas suivis)
+  const discoverConcerts=U.filter(c=>!followedGenres.includes(c.genre)&&!follows.includes(c.artist));
+  const discoverUnique=[];const seenDiscover=new Set();
+  discoverConcerts.forEach(c=>{if(!seenDiscover.has(c.artist)){seenDiscover.add(c.artist);discoverUnique.push(c);}});
   return (
     <div style={{paddingBottom:80}}>
 
       {/* ═══ LOGGED IN → Feed personnalisé ═══ */}
       {user?(
         <div style={{paddingTop:80}}>
-          {/* Header feed */}
           <div style={{padding:"20px 32px 0",maxWidth:1200,margin:"0 auto"}}>
+            {/* Header feed */}
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24}}>
               <div>
                 <p style={{fontSize:9,color:GOLD,letterSpacing:4,textTransform:"uppercase",fontWeight:700,marginBottom:4}}>Mon feed</p>
                 <h1 className="fd" style={{fontSize:"clamp(22px,4vw,32px)",fontWeight:400,letterSpacing:2}}>Bienvenue{user?.email?`, ${user.email.split("@")[0]}`:""}</h1>
               </div>
-              <button onClick={()=>nav("profile")} style={{background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+              <button onClick={()=>nav("profile")} style={{background:"none",border:"none",cursor:"pointer"}}>
                 <div style={{width:36,height:36,borderRadius:"50%",background:"rgba(201,168,76,0.15)",border:"1px solid rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:GOLD,fontWeight:700}}>{(user?.email?.split("@")[0]||"U").slice(0,2).toUpperCase()}</div>
               </button>
             </div>
 
             {/* Stories artistes suivis */}
             {follows.length>0&&(
-              <div style={{marginBottom:24}}>
+              <div style={{marginBottom:28}}>
                 <div style={{display:"flex",gap:14,overflowX:"auto",paddingBottom:8,scrollbarWidth:"none"}}>
                   {follows.map(name=>(
                     <div key={name} onClick={()=>nav("artist",{artistName:name})} style={{flexShrink:0,textAlign:"center",cursor:"pointer"}}>
@@ -374,23 +388,29 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
               </div>
             )}
 
-            {/* Concerts des artistes suivis */}
+            {/* ─── SECTION 1 : Concerts des artistes suivis ─── */}
             {followedConcerts.length>0&&(
               <div style={{marginBottom:32}}>
-                <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:12}}>Concerts de tes artistes</p>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                  <div>
+                    <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:4}}>Tes artistes</p>
+                    <p style={{fontSize:13,fontWeight:600}}>Prochains concerts</p>
+                  </div>
+                  <button className="bo" style={{fontSize:8,padding:"6px 12px"}} onClick={()=>nav("upcoming")}>Voir tout</button>
+                </div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {followedConcerts.slice(0,8).map(c=>(
+                  {followedConcerts.slice(0,6).map(c=>(
                     <div key={c.id} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",cursor:"pointer",transition:"all 0.2s"}} onClick={()=>nav("upcoming-detail",c)}
                       onMouseOver={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.3)"}
                       onMouseOut={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.08)"}>
-                      <ArtistImg name={c.artist} fallback={c.img} size={40} images={artistImages}/>
+                      <ArtistImg name={c.artist} fallback={c.img} size={44} images={artistImages}/>
                       <div style={{flex:1}}>
-                        <p style={{fontWeight:700,fontSize:13}}>{c.artist}</p>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}><p style={{fontWeight:700,fontSize:13}}>{c.artist}</p>{social.isCertified&&social.isCertified(c.artist)&&<CrownBadge size={14}/>}</div>
                         <p style={{fontSize:11,color:"#888",marginTop:2}}>{c.date} · {c.venue} · {c.city}</p>
                       </div>
-                      <div style={{textAlign:"right"}}>
-                        <span className="tag" style={{fontSize:7}}>{c.category}</span>
-                        <div style={{fontSize:10,color:GOLD,marginTop:4}}>{c.daysLeft}j</div>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <TicketButton artist={c.artist} size="small"/>
+                        <div style={{textAlign:"right"}}><span className="tag" style={{fontSize:7}}>{c.category}</span><div style={{fontSize:10,color:GOLD,marginTop:3}}>{c.daysLeft}j</div></div>
                       </div>
                     </div>
                   ))}
@@ -398,6 +418,64 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
               </div>
             )}
 
+            {/* ─── SECTION 2 : Artistes similaires (même genres, pas suivis) ─── */}
+            {similarUnique.length>0&&(
+              <div style={{marginBottom:32}}>
+                <div style={{marginBottom:14}}>
+                  <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:4}}>Tu pourrais aimer</p>
+                  <p style={{fontSize:13,fontWeight:600}}>Artistes {followedGenres.slice(0,2).join(" · ")} que tu ne suis pas</p>
+                </div>
+                <div className="concerts-grid" style={{display:"grid",gap:12}}>
+                  {similarUnique.slice(0,4).map((c,i)=>(
+                    <div key={c.id} className="cc" style={{animation:`fadeUp 0.4s ${i*0.08}s ease both`,opacity:0}} onClick={()=>nav("upcoming-detail",c)}>
+                      <div style={{height:100,background:"linear-gradient(135deg,rgba(201,168,76,0.07),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+                        <ArtistImg name={c.artist} fallback={c.img} size={70} images={artistImages}/>
+                        <div style={{position:"absolute",top:8,right:8}}><GenreIcon name={c.genre} size={14}/></div>
+                      </div>
+                      <div style={{padding:"12px 16px"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div><h3 style={{fontSize:14,fontWeight:700,letterSpacing:1,marginBottom:2}}>{c.artist}</h3><p style={{fontSize:10,color:"#888"}}>{c.date} · {c.city}</p></div>
+                          <TicketButton artist={c.artist} size="small"/>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── SECTION 3 : Mis en avant (artistes émergents, Olympia Class) ─── */}
+            {U.length>0&&(
+              <div style={{marginBottom:32}}>
+                <div style={{marginBottom:14}}>
+                  <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:4}}>Mis en avant</p>
+                  <p style={{fontSize:13,fontWeight:600}}>Artistes à découvrir</p>
+                  <p style={{fontSize:10,color:"#666",marginTop:2}}>CROWDN met en lumière les talents émergents</p>
+                </div>
+                <div style={{display:"flex",gap:12,overflowX:"auto",paddingBottom:8,scrollbarWidth:"none"}}>
+                  {U.filter(c=>c.category==="Olympia Class"&&!follows.includes(c.artist)).reduce((acc,c)=>{if(!acc.find(x=>x.artist===c.artist))acc.push(c);return acc;},[]).slice(0,6).map(c=>(
+                    <div key={c.id} style={{flexShrink:0,width:200,background:BG2,border:"1px solid rgba(201,168,76,0.1)",cursor:"pointer",transition:"all 0.2s"}} onClick={()=>nav("upcoming-detail",c)}
+                      onMouseOver={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.35)"}
+                      onMouseOut={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.1)"}>
+                      <div style={{height:80,background:"linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+                        <ArtistImg name={c.artist} fallback={c.img} size={60} images={artistImages}/>
+                      </div>
+                      <div style={{padding:"10px 14px"}}>
+                        <h4 style={{fontSize:13,fontWeight:700,marginBottom:2}}>{c.artist}</h4>
+                        <p style={{fontSize:10,color:"#888"}}>{c.date}</p>
+                        <p style={{fontSize:9,color:"#666"}}>{c.venue} · {c.city}</p>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+                          <span className="tag" style={{fontSize:7}}>{c.genre}</span>
+                          <TicketButton artist={c.artist} size="small"/>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Pas encore de follows → onboarding */}
             {follows.length===0&&(
               <div style={{textAlign:"center",padding:"40px 20px",background:"rgba(201,168,76,0.03)",border:"1px solid rgba(201,168,76,0.1)",marginBottom:32}}>
                 <Crown size={36}/>
@@ -407,28 +485,8 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
               </div>
             )}
 
-            {/* Recommandations */}
-            <div style={{marginBottom:32}}>
-              <p style={{fontSize:9,color:GOLD,letterSpacing:3,textTransform:"uppercase",fontWeight:700,marginBottom:12}}>À découvrir</p>
-              <div className="concerts-grid" style={{display:"grid",gap:14}}>
-                {U.filter(c=>!follows.includes(c.artist)).slice(0,4).map((c,i)=>(
-                  <div key={c.id} className="cc" style={{animation:`fadeUp 0.5s ${i*0.1}s ease both`,opacity:0}} onClick={()=>nav("upcoming-detail",c)}>
-                    <div style={{height:100,background:"linear-gradient(135deg,rgba(201,168,76,0.07),rgba(201,168,76,0.02))",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
-                      <ArtistImg name={c.artist} fallback={c.img} size={80} images={artistImages}/>
-                      <div style={{position:"absolute",top:10,left:12}}><span className="ub"><span className="ld"/>{c.daysLeft}j</span></div>
-                      <div style={{position:"absolute",top:10,right:12}}><GenreIcon name={c.genre} size={16}/></div>
-                    </div>
-                    <div style={{padding:"14px 18px 18px"}}>
-                      <h3 style={{fontSize:15,fontWeight:700,letterSpacing:1,marginBottom:3}}>{c.artist}</h3>
-                      <p style={{fontSize:11,color:"#888"}}>{c.date} · {c.city}</p>
-                      <p style={{fontSize:10,color:"#666",marginTop:2}}>{c.venue}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div style={{textAlign:"center",marginTop:16}}>
-                <button className="bo" style={{fontSize:9,padding:"10px 20px"}} onClick={()=>nav("upcoming")}>Voir tous les concerts →</button>
-              </div>
+            <div style={{textAlign:"center",marginTop:8,marginBottom:24}}>
+              <button className="bo" style={{fontSize:9,padding:"10px 20px"}} onClick={()=>nav("upcoming")}>Voir tous les concerts →</button>
             </div>
           </div>
         </div>
