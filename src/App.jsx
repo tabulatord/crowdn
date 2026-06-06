@@ -241,6 +241,21 @@ function CrownBadge({size=16}) {
   </svg>;
 }
 
+function RoleBadge({role,size="normal"}) {
+  const sm=size==="small";
+  const config={
+    journalist:{label:"Journaliste",bg:"rgba(76,200,100,0.1)",border:"rgba(76,200,100,0.3)",color:"#4CC864"},
+    music_pro:{label:"Pro musique",bg:"rgba(76,200,100,0.1)",border:"rgba(76,200,100,0.3)",color:"#4CC864"},
+    jury:{label:"Juré",bg:"rgba(201,168,76,0.1)",border:"rgba(201,168,76,0.3)",color:GOLD},
+    artist:{label:"Artiste",bg:"rgba(201,168,76,0.1)",border:"rgba(201,168,76,0.3)",color:GOLD},
+    admin:{label:"Admin",bg:"rgba(255,80,80,0.1)",border:"rgba(255,80,80,0.3)",color:"#FF5050"},
+    user:{label:"Membre",bg:"rgba(255,255,255,0.05)",border:"rgba(255,255,255,0.1)",color:"#888"}
+  };
+  const c=config[role]||config.user;
+  const icon=role==="jury"?"⭐":role==="journalist"||role==="music_pro"?"🟢":role==="artist"?"👑":role==="admin"?"🔑":"";
+  return <span style={{display:"inline-flex",alignItems:"center",gap:sm?3:5,padding:sm?"2px 6px":"4px 10px",background:c.bg,border:`1px solid ${c.border}`,fontSize:sm?7:9,fontWeight:700,letterSpacing:sm?1:1.5,textTransform:"uppercase",color:c.color}}>{icon} {c.label}</span>;
+}
+
 function useSocial(user) {
   const [follows,setFollows]=useState([]);
   const [attending,setAttending]=useState([]);
@@ -2269,7 +2284,22 @@ function UserProfile({user,social,nav,upcomingData,artistImages,role,userArtistN
   (upcomingData||[]).forEach(c=>{if(follows.includes(c.artist))genreCounts[c.genre]=(genreCounts[c.genre]||0)+1;});
   const topGenres=Object.entries(genreCounts).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([g])=>g);
   const userName=user?.user_metadata?.name||user?.email?.split("@")[0]||"Utilisateur";
-  const roleLabels={user:"Membre",jury:"Juré certifié",artist:"Artiste",admin:"Administrateur"};
+  const [isPublic,setIsPublic]=useState(true);
+  const [toast,setToast]=useState("");
+
+  useEffect(()=>{
+    supabase.from("profiles").select("is_public").eq("id",user?.id).single().then(({data})=>{
+      if(data)setIsPublic(data.is_public!==false);
+    });
+  },[user]);
+
+  const togglePublic=async()=>{
+    const newVal=!isPublic;
+    setIsPublic(newVal);
+    await supabase.from("profiles").update({is_public:newVal}).eq("id",user?.id);
+    setToast(newVal?"Profil public ✓":"Profil privé ✓");
+    setTimeout(()=>setToast(""),2000);
+  };
 
   return (
     <div style={{padding:"100px 20px 80px",maxWidth:600,margin:"0 auto"}}>
@@ -2277,16 +2307,22 @@ function UserProfile({user,social,nav,upcomingData,artistImages,role,userArtistN
         <div style={{width:72,height:72,borderRadius:"50%",background:"rgba(201,168,76,0.1)",border:"2px solid rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontSize:22,color:GOLD,fontWeight:700}}>{userName.slice(0,2).toUpperCase()}</div>
         <h1 className="fd" style={{fontSize:24,fontWeight:400,letterSpacing:2}}>{userName}</h1>
         <p style={{fontSize:11,color:"#888",marginTop:4}}>{user?.email}</p>
-        <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"4px 14px",background:role==="artist"?"rgba(201,168,76,0.1)":role==="jury"?"rgba(76,200,100,0.1)":role==="admin"?"rgba(255,80,80,0.1)":"rgba(255,255,255,0.05)",border:`1px solid ${role==="artist"?"rgba(201,168,76,0.3)":role==="jury"?"rgba(76,200,100,0.3)":role==="admin"?"rgba(255,80,80,0.3)":"rgba(255,255,255,0.1)"}`,marginTop:10,fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",color:role==="artist"?GOLD:role==="jury"?"#4CC864":role==="admin"?"#FF5050":"#888"}}>
-          {role==="artist"&&<CrownBadge size={14}/>}
-          {roleLabels[role]||"Membre"}
-        </div>
+        <div style={{marginTop:10}}><RoleBadge role={role}/></div>
         {role==="artist"&&userArtistName&&<p style={{fontSize:12,color:GOLD,marginTop:8}}>Page artiste : {userArtistName}</p>}
         <div style={{display:"flex",gap:24,justifyContent:"center",margin:"16px 0"}}>
           <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:20,fontWeight:700}}>{follows.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>Suivis</div></div>
           <div style={{textAlign:"center"}}><div className="fd gt" style={{fontSize:20,fontWeight:700}}>{attending.length}</div><div style={{fontSize:9,color:"#666",letterSpacing:2,textTransform:"uppercase"}}>J'y vais</div></div>
         </div>
         {topGenres.length>0&&<div style={{display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap"}}>{topGenres.map(g=><span key={g} style={{padding:"3px 10px",background:"rgba(201,168,76,0.06)",border:"1px solid rgba(201,168,76,0.15)",fontSize:9,color:"#aaa",letterSpacing:1,display:"flex",alignItems:"center",gap:4}}><GenreIcon name={g} size={12}/> {g}</span>)}</div>}
+
+        {/* Toggle public/privé */}
+        <div style={{marginTop:16,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+          <span style={{fontSize:10,color:"#888"}}>Profil {isPublic?"public":"privé"}</span>
+          <button onClick={togglePublic} style={{width:44,height:24,borderRadius:12,background:isPublic?"rgba(201,168,76,0.3)":"rgba(255,255,255,0.1)",border:"none",cursor:"pointer",position:"relative",transition:"all 0.2s"}}>
+            <div style={{width:18,height:18,borderRadius:"50%",background:isPublic?GOLD:"#555",position:"absolute",top:3,left:isPublic?23:3,transition:"all 0.2s"}}/>
+          </button>
+          <span style={{fontSize:9,color:"#555"}}>{isPublic?"Tout le monde peut voir ton activité":"Seul toi vois ton profil"}</span>
+        </div>
       </div>
 
       <div style={{height:1,background:"linear-gradient(to right,transparent,rgba(201,168,76,0.15),transparent)",margin:"20px 0"}}/>
@@ -2329,7 +2365,6 @@ function UserProfile({user,social,nav,upcomingData,artistImages,role,userArtistN
 
       <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
         {role==="artist"&&<button className="bp" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={()=>nav("artist-dash")}>👑 Mon espace artiste</button>}
-        {role==="jury"&&<button className="bp" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={()=>nav("jury-dash")}>⭐ Mon espace juré</button>}
         {role==="admin"&&<button className="bp" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={()=>nav("admin")}>🔑 Administration</button>}
         <button className="bo" style={{padding:"10px 20px",fontSize:10,letterSpacing:2}} onClick={async()=>{await supabase.auth.signOut();nav("home");window.location.reload();}}>🚪 Déconnexion</button>
       </div>
@@ -2425,7 +2460,6 @@ export default function App() {
     {key:"past",label:"Passés",icon:"🎭"},
     {key:"become-jury",label:"Be a Jury",icon:"👑"},
     ...(!role?[{key:"become-jury",label:"Jury",icon:"👑"}]:[]),
-    ...(role==="jury"?[{key:"jury-dash",label:"Mon espace",icon:"⭐"}]:[]),
     ...(role==="artist"?[{key:"artist-dash",label:"Mon espace",icon:"👑"}]:[]),
     ...(role==="admin"?[{key:"admin",label:"Admin",icon:"🔑"}]:[]),
   ];
@@ -2455,7 +2489,7 @@ export default function App() {
       </nav>
 
       {page==="home"&&<HomePage nav={nav} upcoming={upcomingData} past={pastData} artistImages={artistImages} social={social} user={user}/>}
-      {page==="login"&&<Login nav={nav} onLogin={(r,u,an)=>{setRole(r);setUser(u);setUserArtistName(an);setWantsJuryLogin(false);if(r==="artist")nav("artist-dash");else if(r==="jury")nav("jury-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
+      {page==="login"&&<Login nav={nav} onLogin={(r,u,an)=>{setRole(r);setUser(u);setUserArtistName(an);setWantsJuryLogin(false);if(r==="artist")nav("artist-dash");else if(r==="admin")nav("admin");else nav("home");}} wantsJury={wantsJuryLogin}/>}
       {page==="upcoming"&&<UpcomingPage nav={nav} initialGenre={genreFilter} concerts={upcomingData} artistImages={artistImages}/>}
       {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages} social={social} user={user}/>}
       {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
@@ -2525,7 +2559,6 @@ export default function App() {
         <button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Be a Jury</button>
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
         {role&&<button className={`mni ${page==="profile"?"active":""}`} onClick={()=>nav("profile")}><span style={{fontSize:18}}>👤</span>Mon profil</button>}
-        {role==="jury"&&<button className={`mni ${page==="jury-dash"?"active":""}`} onClick={()=>nav("jury-dash")}><span style={{fontSize:18}}>⭐</span>Mon espace</button>}
         {role==="artist"&&<button className={`mni ${page==="artist-dash"?"active":""}`} onClick={()=>nav("artist-dash")}><span style={{fontSize:18}}>👑</span>Mon espace</button>}
         {role==="admin"&&<button className={`mni ${page==="admin"?"active":""}`} onClick={()=>nav("admin")}><span style={{fontSize:18}}>🔑</span>Admin</button>}
         {role&&<button className="mni" onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}><span style={{fontSize:18}}>🚪</span>Quitter</button>}
