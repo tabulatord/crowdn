@@ -1774,11 +1774,11 @@ function PublishMoment({user,nav,upcomingData=[]}) {
   const allArtists=[...new Set((upcomingData||[]).map(c=>c.artist))].sort();
 
   const handlePublish=async()=>{
-    if(!videoFile||!artist){return;}
+    if(!videoFile||!artist)return;
     setUploading(true);
     try{
       const ext=videoFile.name.split(".").pop();
-      const path=`${user.id}/${Date.now()}.${ext}`;
+      const path=user.id+"/"+Date.now()+"."+ext;
       const{error}=await supabase.storage.from("moments").upload(path,videoFile);
       if(error){alert("Erreur upload");setUploading(false);return;}
       const{data:urlData}=supabase.storage.from("moments").getPublicUrl(path);
@@ -1808,43 +1808,75 @@ function PublishMoment({user,nav,upcomingData=[]}) {
       </div>
 
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        {/* Artiste obligatoire */}
         <div>
-          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Artiste</p>
-          <select className="ifield" value={artist} onChange={e=>setArtist(e.target.value)} style={{cursor:"pointer"}}>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Artiste *</p>
+          <select className="ifield" value={artist} onChange={e=>{setArtist(e.target.value);setConcertTag("");}} style={{cursor:"pointer"}}>
             <option value="">Choisis l'artiste</option>
             {allArtists.map(a=><option key={a} value={a}>{a}</option>)}
           </select>
         </div>
 
+        {/* Vidéo — 2 modes */}
         <div>
-          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Vidéo</p>
-          <label style={{display:"flex",alignItems:"center",gap:12,padding:"18px",border:`2px dashed ${videoFile?"rgba(76,200,100,0.5)":"rgba(201,168,76,0.3)"}`,background:videoFile?"rgba(76,200,100,0.03)":"rgba(201,168,76,0.02)",cursor:"pointer"}}>
-            <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFile(e.target.files[0]||null)}/>
-            <span style={{fontSize:28}}>{videoFile?"✅":"🎬"}</span>
-            <div>
-              <p style={{fontSize:12,fontWeight:600,color:videoFile?"#4CC864":GOLD}}>{videoFile?.name||"Sélectionner une vidéo"}</p>
-              <p style={{fontSize:9,color:"#666",marginTop:2}}>Extrait concert · Backstage · Fan-cam · Tournée</p>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Vidéo *</p>
+          {!videoFile?(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {/* Mode Snapchat — caméra arrière */}
+              <label style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"24px 12px",border:"2px dashed rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.02)",cursor:"pointer",textAlign:"center"}}>
+                <input type="file" accept="video/*" capture="environment" style={{display:"none"}} onChange={e=>setVideoFile(e.target.files[0]||null)}/>
+                <span style={{fontSize:32}}>📹</span>
+                <span style={{fontSize:11,fontWeight:700,color:GOLD}}>Filmer</span>
+                <span style={{fontSize:8,color:"#666"}}>Ouvre ta caméra</span>
+              </label>
+              {/* Mode selfie — caméra avant */}
+              <label style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"24px 12px",border:"2px dashed rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.02)",cursor:"pointer",textAlign:"center"}}>
+                <input type="file" accept="video/*" capture="user" style={{display:"none"}} onChange={e=>setVideoFile(e.target.files[0]||null)}/>
+                <span style={{fontSize:32}}>🤳</span>
+                <span style={{fontSize:11,fontWeight:700,color:GOLD}}>Réaction</span>
+                <span style={{fontSize:8,color:"#666"}}>Caméra selfie</span>
+              </label>
             </div>
-          </label>
+          ):(
+            <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px",border:"2px solid rgba(76,200,100,0.4)",background:"rgba(76,200,100,0.03)"}}>
+              <span style={{fontSize:24}}>✅</span>
+              <div style={{flex:1}}>
+                <p style={{fontSize:11,fontWeight:600,color:"#4CC864"}}>{videoFile.name}</p>
+                <p style={{fontSize:9,color:"#666"}}>{(videoFile.size/1024/1024).toFixed(1)} MB</p>
+              </div>
+              <button onClick={()=>setVideoFile(null)} style={{background:"none",border:"1px solid rgba(255,50,50,0.3)",color:"#FF5050",fontSize:9,padding:"4px 10px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}}>Changer</button>
+            </div>
+          )}
+          {/* Importer depuis galerie */}
+          {!videoFile&&(
+            <label style={{display:"flex",alignItems:"center",gap:10,padding:"12px",border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.02)",cursor:"pointer",marginTop:8}}>
+              <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFile(e.target.files[0]||null)}/>
+              <span style={{fontSize:18}}>📁</span>
+              <div><p style={{fontSize:10,color:"#888"}}>Importer depuis ta galerie</p><p style={{fontSize:8,color:"#555"}}>MP4, MOV — max 100MB</p></div>
+            </label>
+          )}
         </div>
 
+        {/* Caption */}
         <div>
           <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Caption</p>
           <input className="ifield" placeholder="Ex: Ambiance de fou à l'Accor Arena 🔥" value={caption} onChange={e=>setCaption(e.target.value)}/>
         </div>
 
+        {/* Lier à un concert */}
+        {artist&&(
         <div>
-          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Lier à un concert (optionnel)</p>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Concert (optionnel)</p>
           <select className="ifield" value={concertTag} onChange={e=>setConcertTag(e.target.value)} style={{cursor:"pointer"}}>
             <option value="">Aucun concert spécifique</option>
-            {(upcomingData||[]).filter(c=>!artist||c.artist===artist).map(c=><option key={c.id} value={`${c.venue} — ${c.date}`}>{c.artist} — {c.venue} — {c.date}</option>)}
+            {(upcomingData||[]).filter(c=>c.artist===artist).map(c=><option key={c.id} value={c.venue+" — "+c.date}>{c.venue} — {c.date}</option>)}
           </select>
         </div>
+        )}
 
         <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,marginTop:8,opacity:(!videoFile||!artist||uploading)?0.5:1}} onClick={handlePublish} disabled={!videoFile||!artist||uploading}>
           {uploading?"Upload en cours...":"Publier mon Moment 👑"}
         </button>
-
         <button className="bo" style={{width:"100%",padding:12,fontSize:10,letterSpacing:2}} onClick={()=>nav("home")}>Annuler</button>
       </div>
     </div>
