@@ -799,6 +799,27 @@ function UpcomingDetail({c,nav,artistImages={},social={},user}) {
             <p style={{fontSize:12,color:"#888",lineHeight:1.7,marginBottom:4}}>Ce concert sera évalué par un panel de jurés certifiés.</p>
             <button style={{background:"transparent",border:"1px solid rgba(201,168,76,0.6)",color:GOLD,padding:"12px 28px",fontFamily:"'Montserrat',sans-serif",fontWeight:700,fontSize:10,letterSpacing:3,textTransform:"uppercase",cursor:"pointer",transition:"all 0.3s",width:"100%",marginTop:12}} onClick={()=>nav("become-jury")}>★ Become a Jury Member</button>
           </div>
+          {user&&(
+          <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:"20px 24px",marginBottom:24}}>
+            <p className="sl" style={{marginBottom:10}}>Tu y étais ?</p>
+            <p style={{fontSize:11,color:"#888",marginBottom:12,lineHeight:1.7}}>Partage ton Moment live — extrait filmé, ambiance, fan-cam</p>
+            <label style={{display:"flex",alignItems:"center",gap:10,padding:"14px",border:"2px dashed rgba(201,168,76,0.3)",background:"rgba(201,168,76,0.02)",cursor:"pointer",marginBottom:10}}>
+              <input type="file" accept="video/*" style={{display:"none"}} onChange={async e=>{
+                const file=e.target.files[0];if(!file)return;
+                const ext=file.name.split(".").pop();
+                const path=`${user.id}/${Date.now()}.${ext}`;
+                const{error:upErr}=await supabase.storage.from("moments").upload(path,file);
+                if(upErr){alert("Erreur upload");return;}
+                const{data:urlData}=supabase.storage.from("moments").getPublicUrl(path);
+                const caption=prompt("Caption pour ton Moment (optionnel):")||"";
+                await supabase.from("moments").insert({artist_name:c.artist,user_id:user.id,video_url:urlData.publicUrl,caption,concert_tag:`${c.venue} — ${c.date}`});
+                alert("Moment publié ✓");
+              }}/>
+              <span style={{fontSize:22}}>🎬</span>
+              <div><p style={{fontSize:11,fontWeight:600,color:GOLD}}>Uploader une vidéo</p><p style={{fontSize:9,color:"#666"}}>MP4, MOV — max 100MB</p></div>
+            </label>
+          </div>
+          )}
           <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",padding:24}}>
             <p className="sl" style={{marginBottom:16}}>Informations</p>
             {[["Artiste",c.artist],["Date",c.date],["Ville",c.city],["Salle",c.venue],["Catégorie",c.category]].map(([k,v])=>(
