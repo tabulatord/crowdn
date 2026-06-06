@@ -192,10 +192,10 @@ const UPCOMING_DEFAULT = [
 ].map(c=>({...c,daysLeft:daysUntil(c.date)}));
 
 const PAST_DEFAULT = [
-  {id:10,artist:"Billie Eilish",date:"10 Juin 2025",city:"Paris",venue:"Accor Arena",category:"Arena Class",genre:"Pop",img:"🖤",juryQuote:"Une présence scénique hors du commun. Elle a rendu l'Accor Arena intime — c'est un tour de force.",juryName:"Sophie L.",juryAvatar:"👩‍🎤",juryHandle:"@sophiecrowdn",tiktokUrl:"#",photos:["📸","🎬","🌟"]},
-  {id:11,artist:"Ninho",date:"2 Mai 2025",city:"Paris",venue:"Stade de France",category:"Stadium Class",genre:"Hip-Hop",img:"🏆",juryQuote:"Un stade plein à craquer pour un rappeur français. La scène du rap français a changé de dimension ce soir.",juryName:"Marc F.",juryAvatar:"🎧",juryHandle:"@marcjury",tiktokUrl:"#",photos:["📸","🎬","🔥"]},
-  {id:12,artist:"DJ Snake",date:"10 Mai 2025",city:"Paris",venue:"Stade de France",category:"Stadium Class",genre:"Électro",img:"🐍",juryQuote:"Un show pyrotechnique à couper le souffle. La foule n'a jamais eu autant l'impression d'être au centre du monde.",juryName:"Elena R.",juryAvatar:"🎭",juryHandle:"@elenarjury",tiktokUrl:"#",photos:["📸","🎬","🌟","🔥"]},
-  {id:13,artist:"Slimane",date:"8 Avr 2025",city:"Paris",venue:"Accor Arena",category:"Arena Class",genre:"Pop",img:"🎶",juryQuote:"Une voix qui transperce les murs. Slimane a prouvé qu'il appartient désormais aux plus grandes scènes.",juryName:"Thomas V.",juryAvatar:"🎤",juryHandle:"@thomasvjury",tiktokUrl:"#",photos:["📸","🎬"]},
+  {id:10,artist:"Billie Eilish",date:"10 Juin 2025",city:"Paris",venue:"Accor Arena",category:"Arena Class",genre:"Pop",img:"🖤",juryQuote:"",juryName:"",juryAvatar:"",juryHandle:"",tiktokUrl:"",photos:[]},
+  {id:11,artist:"Ninho",date:"2 Mai 2025",city:"Paris",venue:"Stade de France",category:"Stadium Class",genre:"Hip-Hop",img:"🏆",juryQuote:"",juryName:"",juryAvatar:"",juryHandle:"",tiktokUrl:"",photos:[]},
+  {id:12,artist:"DJ Snake",date:"10 Mai 2025",city:"Paris",venue:"Stade de France",category:"Stadium Class",genre:"Électro",img:"🐍",juryQuote:"",juryName:"",juryAvatar:"",juryHandle:"",tiktokUrl:"",photos:[]},
+  {id:13,artist:"Slimane",date:"8 Avr 2025",city:"Paris",venue:"Accor Arena",category:"Arena Class",genre:"Pop",img:"🎶",juryQuote:"",juryName:"",juryAvatar:"",juryHandle:"",tiktokUrl:"",photos:[]},
 ];
 
 const JURY_TYPES = [
@@ -347,6 +347,7 @@ function PastCard({c,idx,onClick,artistImages={}}) {
               <span style={{fontSize:10,color:"#666",display:"flex",alignItems:"center",gap:4}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
             </div>
           </div>
+          {c.juryQuote?(
           <div className="qb">
             <p className="fd" style={{fontSize:15,fontStyle:"italic",color:"rgba(245,240,232,0.85)",lineHeight:1.6,marginBottom:12}}>« {c.juryQuote} »</p>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -357,9 +358,14 @@ function PastCard({c,idx,onClick,artistImages={}}) {
                   <p style={{fontSize:10,color:"#666"}}>Juré CROWDN</p>
                 </div>
               </div>
-              <a href={c.tiktokUrl} className="tb" onClick={e=>e.stopPropagation()}><span style={{fontSize:14}}>▶</span>TikTok</a>
+              {c.tiktokUrl&&<a href={c.tiktokUrl} className="tb" onClick={e=>e.stopPropagation()}><span style={{fontSize:14}}>▶</span>TikTok</a>}
             </div>
           </div>
+          ):(
+          <div style={{padding:"12px 16px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.08)"}}>
+            <p style={{fontSize:11,color:"#666",fontStyle:"italic"}}>Évaluation jury à venir</p>
+          </div>
+          )}
         </div>
       </div>
     </div>
@@ -1001,6 +1007,7 @@ function PastDetail({c,nav,artistImages={}}) {
         <span className="tag">{c.category}</span>
       </div>
       <div style={{maxWidth:620,margin:"0 auto",padding:"20px 20px 0"}}>
+        {c.juryQuote?(
         <div style={{marginBottom:24}}>
           <p className="sl" style={{marginBottom:16}}>Le mot du jury</p>
           <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:"28px 24px"}}>
@@ -1012,13 +1019,19 @@ function PastDetail({c,nav,artistImages={}}) {
                 <div>
                   <p style={{fontWeight:700,color:GOLD,fontSize:13}}>{c.juryName}</p>
                   <p style={{fontSize:10,color:"#666",marginTop:2}}>Juré certifié CROWDN</p>
-                  <p style={{fontSize:10,color:"#555",marginTop:1}}>{c.juryHandle}</p>
                 </div>
               </div>
-              <a href={c.tiktokUrl} className="tb"><span style={{fontSize:16}}>▶</span>Voir sur TikTok</a>
             </div>
           </div>
         </div>
+        ):(
+        <div style={{marginBottom:24}}>
+          <p className="sl" style={{marginBottom:16}}>Évaluation</p>
+          <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)",padding:"20px",textAlign:"center"}}>
+            <p style={{fontSize:12,color:"#666",fontStyle:"italic"}}>L'évaluation jury de ce concert sera publiée prochainement</p>
+          </div>
+        </div>
+        )}
         <div style={{marginBottom:24}}>
           <p className="sl" style={{marginBottom:14}}>Moments du concert</p>
           <div style={{display:"flex",gap:10}}>
@@ -1739,6 +1752,38 @@ www.cnil.fr`},
         </div>
       ))}
 
+      <button className="bo" style={{fontSize:10,padding:"10px 20px"}} onClick={()=>nav("home")}>← Retour</button>
+    </div>
+  );
+}
+
+// ─── CONDITIONS GÉNÉRALES D'UTILISATION ──────────────────────────────────────
+function CGU({nav}) {
+  return (
+    <div style={{padding:"100px 20px 80px",maxWidth:800,margin:"0 auto"}}>
+      <p className="sl" style={{marginBottom:8}}>Légal</p>
+      <h1 className="fd" style={{fontSize:"clamp(28px,5vw,40px)",fontWeight:400,letterSpacing:2,marginBottom:8}}>Conditions générales d'utilisation</h1>
+      <p style={{fontSize:12,color:"#777",marginBottom:40}}>Dernière mise à jour : {new Date().toLocaleDateString("fr-FR")}</p>
+
+      {[
+        {title:"1. Objet",content:"Les présentes Conditions Générales d'Utilisation (CGU) ont pour objet de définir les modalités d'accès et d'utilisation de la plateforme CROWDN accessible à l'adresse www.crowdn.fr. En accédant au site, l'utilisateur accepte sans réserve les présentes CGU."},
+        {title:"2. Description du service",content:"CROWDN est une plateforme dédiée au live musical. Elle permet de consulter des concerts à venir, suivre des artistes, découvrir du contenu live exclusif, et participer à un système d'évaluation transparent des performances live. L'application est en cours de développement."},
+        {title:"3. Inscription et comptes",content:"L'inscription est gratuite et ouverte à toute personne physique majeure. L'utilisateur s'engage à fournir des informations exactes. Quatre profils sont proposés : Fan, Artiste, Journaliste, Acteur de la musique. Les profils Artiste, Journaliste et Acteur de la musique sont soumis à vérification par l'équipe CROWDN."},
+        {title:"4. Contenus utilisateurs",content:"Les artistes certifiés peuvent publier du contenu vidéo exclusivement live (extraits de concerts, backstage, tournée). Tout contenu publié doit respecter la législation en vigueur. CROWDN se réserve le droit de supprimer tout contenu inapproprié, illicite ou ne correspondant pas à la charte de la plateforme."},
+        {title:"5. Système d'évaluation",content:"CROWDN met en place un système d'évaluation des concerts par un jury. Les critères d'évaluation sont publics et transparents. Les évaluations individuelles des jurés restent confidentielles. Seuls les résultats collectifs sont publiés. Les évaluations donnent lieu à une cérémonie annuelle de récompenses organisée par genre musical et catégorie de salle."},
+        {title:"6. Billetterie",content:"CROWDN propose des liens de redirection vers des plateformes de billetterie tierces (Fnac Spectacles, Ticketmaster, etc.). CROWDN n'est pas vendeur de billets et ne peut être tenu responsable des transactions effectuées sur ces plateformes."},
+        {title:"7. Propriété intellectuelle",content:"L'ensemble des éléments du site CROWDN (logo, design, textes, code, concept) est protégé par le droit de la propriété intellectuelle. Toute reproduction est interdite sans autorisation préalable. Les contenus publiés par les artistes restent leur propriété. En les publiant sur CROWDN, ils accordent une licence non-exclusive de diffusion sur la plateforme."},
+        {title:"8. Données personnelles",content:"Le traitement des données personnelles est détaillé dans notre Politique de confidentialité. CROWDN s'engage à respecter le Règlement Général sur la Protection des Données (RGPD)."},
+        {title:"9. Responsabilité",content:"CROWDN ne garantit pas la disponibilité permanente du service. CROWDN ne saurait être tenu responsable des informations inexactes concernant les concerts (dates, lieux, prix) qui relèvent de la responsabilité des organisateurs. L'utilisateur est seul responsable de l'utilisation qu'il fait de la plateforme."},
+        {title:"10. Modification des CGU",content:"CROWDN se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés de toute modification substantielle. La poursuite de l'utilisation du site vaut acceptation des CGU modifiées."},
+        {title:"11. Droit applicable",content:"Les présentes CGU sont soumises au droit français. En cas de litige, et après tentative de résolution amiable, les tribunaux français seront seuls compétents."},
+        {title:"12. Contact",content:"Pour toute question relative aux présentes CGU : contact@crowdn.fr"},
+      ].map((s,i)=>(
+        <div key={i} style={{marginBottom:28}}>
+          <h2 style={{fontSize:13,fontWeight:700,color:GOLD,letterSpacing:1.5,marginBottom:10}}>{s.title}</h2>
+          <p style={{fontSize:12,color:"#ccc",lineHeight:1.9}}>{s.content}</p>
+        </div>
+      ))}
       <button className="bo" style={{fontSize:10,padding:"10px 20px"}} onClick={()=>nav("home")}>← Retour</button>
     </div>
   );
@@ -2506,6 +2551,7 @@ export default function App() {
       }}/>}
       {page==="mentions-legales"&&<MentionsLegales nav={nav}/>}
       {page==="politique-confidentialite"&&<PolitiqueConfidentialite nav={nav}/>}
+      {page==="cgu"&&<CGU nav={nav}/>}
 
       {/* Footer */}
       <div style={{background:"#080808",borderTop:"1px solid rgba(201,168,76,0.08)",padding:"28px 32px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:role||!cookieConsent?60:0}}>
@@ -2514,7 +2560,7 @@ export default function App() {
           <span style={{fontSize:10,color:"#555"}}>© {new Date().getFullYear()}</span>
         </div>
         <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
-          {[["mentions-legales","Mentions légales"],["politique-confidentialite","Politique de confidentialité"]].map(([p,l])=>(
+          {[["mentions-legales","Mentions légales"],["politique-confidentialite","Politique de confidentialité"],["cgu","CGU"]].map(([p,l])=>(
             <button key={p} onClick={()=>nav(p)} style={{background:"none",border:"none",color:"#666",fontSize:10,cursor:"pointer",fontFamily:"'Montserrat',sans-serif",letterSpacing:1,textTransform:"uppercase",transition:"color 0.2s"}}
               onMouseOver={e=>e.currentTarget.style.color=GOLD}
               onMouseOut={e=>e.currentTarget.style.color="#666"}>
