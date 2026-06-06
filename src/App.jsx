@@ -72,6 +72,18 @@ const styles = `
   .gf-btn:hover{border-color:rgba(201,168,76,0.4);color:#C9A84C}
   .gf-btn.active{border-color:#C9A84C;background:rgba(201,168,76,0.1);color:#C9A84C}
   /* ─── RESPONSIVE DESKTOP ─────────────────────────────────────────────────── */
+  /* Capacitor / App mobile — forcer le mode mobile */
+  .capacitor-app .nav-desktop-links { display: none !important; }
+  .capacitor-app .mnav { display: flex !important; }
+  .capacitor-app .hero-grid { grid-template-columns: 1fr !important; }
+  .capacitor-app .hero-right { display: none !important; }
+  .capacitor-app .concerts-grid { grid-template-columns: 1fr !important; }
+  .capacitor-app .desktop-sidebar { display: none !important; }
+  .capacitor-app .desktop-two-col { grid-template-columns: 1fr !important; }
+  .capacitor-app .detail-grid { grid-template-columns: 1fr !important; }
+  .capacitor-app .nav { padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top)); }
+  .capacitor-app .mnav { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+  .capacitor-app { padding-top: env(safe-area-inset-top); }
   @media (max-width: 768px) {
     .nav { padding: 14px 16px; }
     .nav-desktop-links { display: none !important; }
@@ -347,7 +359,7 @@ function PastCard({c,idx,onClick,artistImages={}}) {
               <span style={{fontSize:10,color:"#666",display:"flex",alignItems:"center",gap:4}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
             </div>
           </div>
-          {c.juryQuote?(
+          {c.juryQuote&&(
           <div className="qb">
             <p className="fd" style={{fontSize:15,fontStyle:"italic",color:"rgba(245,240,232,0.85)",lineHeight:1.6,marginBottom:12}}>« {c.juryQuote} »</p>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
@@ -360,10 +372,6 @@ function PastCard({c,idx,onClick,artistImages={}}) {
               </div>
               {c.tiktokUrl&&<a href={c.tiktokUrl} className="tb" onClick={e=>e.stopPropagation()}><span style={{fontSize:14}}>▶</span>TikTok</a>}
             </div>
-          </div>
-          ):(
-          <div style={{padding:"12px 16px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.08)"}}>
-            <p style={{fontSize:11,color:"#666",fontStyle:"italic"}}>Évaluation jury à venir</p>
           </div>
           )}
         </div>
@@ -659,7 +667,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
           <button className="bo" style={{fontSize:9,padding:"8px 16px"}} onClick={()=>nav("past")}>Voir tout</button>
         </div>
         {/* Desktop: 2 colonnes / Mobile: 1 colonne */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(420px,1fr))",gap:14}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:14}}>
           {P.slice(0,2).map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)} artistImages={artistImages}/>)}
         </div>
       </div>
@@ -672,16 +680,18 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
 function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
   const [activeGenre,setActiveGenre]=useState(initialGenre||"Tous");
   const [activeCat,setActiveCat]=useState("Toutes");
+  const [activeCity,setActiveCity]=useState("Toutes");
   const U=concerts||UPCOMING_DEFAULT;
   const allGenres=["Tous",...Array.from(new Set(U.map(c=>c.genre)))];
   const categories=["Toutes","Olympia Class","Zenith Class","Arena Class","Stadium Class"];
-  const filtered=U.filter(c=>(activeGenre==="Tous"||c.genre===activeGenre)&&(activeCat==="Toutes"||c.category===activeCat));
+  const allCities=["Toutes",...Array.from(new Set(U.map(c=>c.city))).sort()];
+  const filtered=U.filter(c=>(activeGenre==="Tous"||c.genre===activeGenre)&&(activeCat==="Toutes"||c.category===activeCat)&&(activeCity==="Toutes"||c.city===activeCity));
   return (
     <div style={{padding:"80px 0 80px",maxWidth:1400,margin:"0 auto"}}>
       <div style={{padding:"20px 32px 32px"}}>
         <p className="sl" style={{marginBottom:8}}>Programme</p>
         <h1 className="fd" style={{fontSize:"clamp(28px,5vw,44px)",fontWeight:400,letterSpacing:2}}>Concerts à venir</h1>
-        <p style={{fontSize:12,color:"#888",marginTop:8}}>{filtered.length} concert{filtered.length>1?"s":""}{activeGenre!=="Tous"?` · ${activeGenre}`:""}{activeCat!=="Toutes"?` · ${activeCat}`:""}</p>
+        <p style={{fontSize:12,color:"#888",marginTop:8}}>{filtered.length} concert{filtered.length>1?"s":""}{activeGenre!=="Tous"?` · ${activeGenre}`:""}{activeCat!=="Toutes"?` · ${activeCat}`:""}{activeCity!=="Toutes"?` · ${activeCity}`:""}</p>
       </div>
       <div className="desktop-two-col" style={{display:"grid",gap:0,alignItems:"start"}}>
         <div className="desktop-sidebar" style={{padding:"0 24px 0 32px",position:"sticky",top:80}}>
@@ -708,24 +718,30 @@ function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
               </button>
             );})}
           </div>
+          <p className="sl" style={{marginBottom:12,marginTop:20,fontSize:9}}>Ville</p>
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {allCities.map(c=>(
+              <button key={c} onClick={()=>setActiveCity(c)}
+                style={{padding:"8px 14px",background:activeCity===c?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeCity===c?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeCity===c?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>{c}</button>
+            ))}
+          </div>
         </div>
 
         <div style={{padding:"0 32px"}}>
-          {/* Filtres mobile — genres */}
-          <div className="genre-filter" style={{marginBottom:12,display:"flex"}}>
-            {allGenres.map(g=>(
-              <button key={g} className={`gf-btn ${activeGenre===g?"active":""}`} onClick={()=>setActiveGenre(g)}>
-                {g!=="Tous"&&<span style={{marginRight:6}}><GenreIcon name={g} size={14}/></span>}{g}
-              </button>
-            ))}
+          {/* Filtres mobile — genres + villes dropdown + catégories */}
+          <div style={{display:"flex",gap:8,marginBottom:8,alignItems:"center"}}>
+            <select value={activeGenre} onChange={e=>setActiveGenre(e.target.value)} style={{flex:1,padding:"10px 14px",background:"#111",border:`1px solid ${activeGenre!=="Tous"?GOLD:"rgba(255,255,255,0.1)"}`,color:activeGenre!=="Tous"?GOLD:"#888",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5L6 8L9 5' stroke='%23C9A84C' fill='none'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 12px center"}}>
+              {allGenres.map(g=><option key={g} value={g} style={{background:"#111",color:"#ccc"}}>{g}</option>)}
+            </select>
+            <select value={activeCity} onChange={e=>setActiveCity(e.target.value)} style={{flex:1,padding:"10px 14px",background:"#111",border:`1px solid ${activeCity!=="Toutes"?GOLD:"rgba(255,255,255,0.1)"}`,color:activeCity!=="Toutes"?GOLD:"#888",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",appearance:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5L6 8L9 5' stroke='%23C9A84C' fill='none'/%3E%3C/svg%3E")`,backgroundRepeat:"no-repeat",backgroundPosition:"right 12px center"}}>
+              {allCities.map(c=><option key={c} value={c} style={{background:"#111",color:"#ccc"}}>{c}</option>)}
+            </select>
           </div>
           {/* Filtres mobile — catégories */}
-          <div className="genre-filter" style={{marginBottom:24,display:"flex"}}>
+          <div style={{display:"flex",gap:6,marginBottom:24}}>
             {categories.map(c=>{
               const labels={"Olympia Class":"O","Zenith Class":"Z","Arena Class":"A","Stadium Class":"S"};
-              return <button key={c} className={`gf-btn ${activeCat===c?"active":""}`} onClick={()=>setActiveCat(c)} style={{fontSize:10}}>
-                {labels[c]||"Toutes"}
-              </button>;
+              return <button key={c} onClick={()=>setActiveCat(c)} style={{flex:1,padding:"8px 0",background:activeCat===c?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeCat===c?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.08)"}`,color:activeCat===c?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textAlign:"center"}}>{labels[c]||"Toutes"}</button>;
             })}
           </div>
           <div className="concerts-grid" style={{display:"grid",gap:16}}>
@@ -947,7 +963,7 @@ function PastPage({nav,concerts,artistImages={}}) {
       <div style={{padding:"20px 32px 32px"}}>
         <p className="sl" style={{marginBottom:8}}>Archives</p>
         <h1 className="fd" style={{fontSize:"clamp(28px,5vw,44px)",fontWeight:400,letterSpacing:2,marginBottom:8}}>Previous Concerts</h1>
-        <p style={{fontSize:12,color:"#777"}}>Le témoignage de nos jurés sur les concerts passés</p>
+        <p style={{fontSize:12,color:"#777"}}>Les concerts qui ont fait vibrer la scène</p>
       </div>
       <div className="desktop-two-col" style={{display:"grid",gap:0,alignItems:"start"}}>
         <div className="desktop-sidebar" style={{padding:"0 24px 0 32px",position:"sticky",top:80}}>
@@ -970,7 +986,7 @@ function PastPage({nav,concerts,artistImages={}}) {
               </button>
             ))}
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(400px,1fr))",gap:16}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:16}}>
             {filtered.map((c,i)=><PastCard key={c.id} c={c} idx={i} onClick={()=>nav("past-detail",c)} artistImages={artistImages}/>)}
           </div>
 
@@ -1028,28 +1044,19 @@ function PastDetail({c,nav,artistImages={}}) {
         <span className="tag">{c.category}</span>
       </div>
       <div style={{maxWidth:620,margin:"0 auto",padding:"20px 20px 0"}}>
-        {c.juryQuote?(
+        {c.juryQuote&&(
         <div style={{marginBottom:24}}>
           <p className="sl" style={{marginBottom:16}}>Le mot du jury</p>
           <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:"28px 24px"}}>
             <div style={{fontSize:40,color:GOLD,opacity:0.4,fontFamily:"serif",lineHeight:1,marginBottom:8}}>"</div>
             <p className="fd" style={{fontSize:"clamp(17px,3.5vw,22px)",fontStyle:"italic",color:"rgba(245,240,232,0.9)",lineHeight:1.7,marginBottom:24}}>{c.juryQuote}</p>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-              <div style={{display:"flex",alignItems:"center",gap:12}}>
-                <div className="ja" style={{width:48,height:48,fontSize:22}}>{c.juryAvatar}</div>
-                <div>
-                  <p style={{fontWeight:700,color:GOLD,fontSize:13}}>{c.juryName}</p>
-                  <p style={{fontSize:10,color:"#666",marginTop:2}}>Juré certifié CROWDN</p>
-                </div>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div className="ja" style={{width:48,height:48,fontSize:22}}>{c.juryAvatar}</div>
+              <div>
+                <p style={{fontWeight:700,color:GOLD,fontSize:13}}>{c.juryName}</p>
+                <p style={{fontSize:10,color:"#666",marginTop:2}}>Juré certifié CROWDN</p>
               </div>
             </div>
-          </div>
-        </div>
-        ):(
-        <div style={{marginBottom:24}}>
-          <p className="sl" style={{marginBottom:16}}>Évaluation</p>
-          <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)",padding:"20px",textAlign:"center"}}>
-            <p style={{fontSize:12,color:"#666",fontStyle:"italic"}}>L'évaluation jury de ce concert sera publiée prochainement</p>
           </div>
         </div>
         )}
@@ -1810,6 +1817,93 @@ function CGU({nav}) {
   );
 }
 
+function PublishMoment({user,nav,upcomingData=[]}) {
+  const [artist,setArtist]=useState("");
+  const [caption,setCaption]=useState("");
+  const [concertTag,setConcertTag]=useState("");
+  const [videoFile,setVideoFile]=useState(null);
+  const [uploading,setUploading]=useState(false);
+  const [success,setSuccess]=useState(false);
+  const allArtists=[...new Set((upcomingData||[]).map(c=>c.artist))].sort();
+
+  const handlePublish=async()=>{
+    if(!videoFile||!artist){return;}
+    setUploading(true);
+    try{
+      const ext=videoFile.name.split(".").pop();
+      const path=`${user.id}/${Date.now()}.${ext}`;
+      const{error}=await supabase.storage.from("moments").upload(path,videoFile);
+      if(error){alert("Erreur upload");setUploading(false);return;}
+      const{data:urlData}=supabase.storage.from("moments").getPublicUrl(path);
+      await supabase.from("moments").insert({artist_name:artist,user_id:user.id,video_url:urlData.publicUrl,caption,concert_tag:concertTag||null});
+      setSuccess(true);
+      setTimeout(()=>nav("home"),2000);
+    }catch(e){alert("Erreur");}
+    finally{setUploading(false);}
+  };
+
+  if(success) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"100px 20px",textAlign:"center"}}>
+      <div>
+        <div style={{fontSize:48,marginBottom:16}}>👑</div>
+        <h2 className="fd" style={{fontSize:24,fontWeight:400,letterSpacing:2,marginBottom:8}}>Moment publié !</h2>
+        <p style={{fontSize:12,color:"#888"}}>Ton contenu live est en ligne</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{padding:"100px 20px 100px",maxWidth:500,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:28}}>
+        <Crown size={32}/>
+        <h1 className="fd" style={{fontSize:24,fontWeight:400,letterSpacing:2,marginTop:12,marginBottom:6}}>Publier un Moment</h1>
+        <p style={{fontSize:11,color:"#888"}}>Partage un contenu 100% live</p>
+      </div>
+
+      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+        <div>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Artiste</p>
+          <select className="ifield" value={artist} onChange={e=>setArtist(e.target.value)} style={{cursor:"pointer"}}>
+            <option value="">Choisis l'artiste</option>
+            {allArtists.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Vidéo</p>
+          <label style={{display:"flex",alignItems:"center",gap:12,padding:"18px",border:`2px dashed ${videoFile?"rgba(76,200,100,0.5)":"rgba(201,168,76,0.3)"}`,background:videoFile?"rgba(76,200,100,0.03)":"rgba(201,168,76,0.02)",cursor:"pointer"}}>
+            <input type="file" accept="video/*" style={{display:"none"}} onChange={e=>setVideoFile(e.target.files[0]||null)}/>
+            <span style={{fontSize:28}}>{videoFile?"✅":"🎬"}</span>
+            <div>
+              <p style={{fontSize:12,fontWeight:600,color:videoFile?"#4CC864":GOLD}}>{videoFile?.name||"Sélectionner une vidéo"}</p>
+              <p style={{fontSize:9,color:"#666",marginTop:2}}>Extrait concert · Backstage · Fan-cam · Tournée</p>
+            </div>
+          </label>
+        </div>
+
+        <div>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Caption</p>
+          <input className="ifield" placeholder="Ex: Ambiance de fou à l'Accor Arena 🔥" value={caption} onChange={e=>setCaption(e.target.value)}/>
+        </div>
+
+        <div>
+          <p style={{fontSize:9,color:GOLD,letterSpacing:2,fontWeight:700,textTransform:"uppercase",marginBottom:6}}>Lier à un concert (optionnel)</p>
+          <select className="ifield" value={concertTag} onChange={e=>setConcertTag(e.target.value)} style={{cursor:"pointer"}}>
+            <option value="">Aucun concert spécifique</option>
+            {(upcomingData||[]).filter(c=>!artist||c.artist===artist).map(c=><option key={c.id} value={`${c.venue} — ${c.date}`}>{c.artist} — {c.venue} — {c.date}</option>)}
+          </select>
+        </div>
+
+        <button className="bp" style={{width:"100%",padding:16,fontSize:11,letterSpacing:3,marginTop:8,opacity:(!videoFile||!artist||uploading)?0.5:1}} onClick={handlePublish} disabled={!videoFile||!artist||uploading}>
+          {uploading?"Upload en cours...":"Publier mon Moment 👑"}
+        </button>
+
+        <button className="bo" style={{width:"100%",padding:12,fontSize:10,letterSpacing:2}} onClick={()=>nav("home")}>Annuler</button>
+      </div>
+    </div>
+  );
+}
+
 function ArtistDash({user,artistName,artistImages={},upcomingData=[]}) {
   const [moments,setMoments]=useState([]);
   const [showUpload,setShowUpload]=useState(false);
@@ -2456,6 +2550,14 @@ export default function App() {
   const [newPwd,setNewPwd]=useState("");
   const [resetMsg,setResetMsg]=useState("");
 
+  // Détection Capacitor (app mobile)
+  useEffect(()=>{
+    const isCapacitor=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform();
+    if(isCapacitor||window.navigator.standalone||window.matchMedia('(display-mode:standalone)').matches){
+      document.body.classList.add("capacitor-app");
+    }
+  },[]);
+
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{
       if(session){
@@ -2531,14 +2633,13 @@ export default function App() {
   ];
 
   return (
-    <>
+    <div style={{overflowX:"hidden",maxWidth:"100vw"}}>
       <style>{styles}</style>
       <nav className="nav">
         <button style={{background:"none",border:"none",cursor:"pointer"}} onClick={()=>nav("home")}>
-          <span style={{fontWeight:800,fontSize:20,letterSpacing:6,color:GOLD}}>CROWD</span>
-          <span className="fd" style={{fontSize:20,fontWeight:700,color:GOLD}}>N</span>
+          <span style={{fontWeight:800,fontSize:14,letterSpacing:4,color:GOLD}}>CROWDN</span>
         </button>
-        <div style={{display:"flex",gap:20,alignItems:"center"}}>
+        <div className="nav-desktop-links" style={{display:"flex",gap:20,alignItems:"center"}}>
           {navItems.map(item=>(<button key={item.key} className={`nl ${page===item.key?"active":""}`} onClick={()=>nav(item.key)}>{item.label}</button>))}
           {role?(
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -2566,6 +2667,7 @@ export default function App() {
       {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages} role={role} userArtistName={userArtistName}/>}
       {page==="jury-dash"&&role==="jury"&&<JuryDash user={user}/>}
       {page==="artist-dash"&&role==="artist"&&<ArtistDash user={user} artistName={userArtistName} artistImages={artistImages} upcomingData={upcomingData}/>}
+      {page==="publish-moment"&&user&&<PublishMoment user={user} nav={nav} upcomingData={upcomingData}/>}
       {page==="admin"&&role==="admin"&&<AdminDash upcomingData={upcomingData} pastData={pastData} onRefresh={async()=>{
         const{data:upcoming}=await supabase.from("upcoming_concerts").select("*").order("id");
         if(upcoming&&upcoming.length>0)setUpcomingData(upcoming.map(c=>({...c,daysLeft:daysUntil(c.date)})));
@@ -2620,16 +2722,42 @@ export default function App() {
       )}
 
       <div className="mnav">
-        <button className={`mni ${page==="home"?"active":""}`} onClick={()=>nav("home")}><span style={{fontSize:18}}>🏠</span>Accueil</button>
-        <button className={`mni ${page==="upcoming"?"active":""}`} onClick={()=>nav("upcoming")}><span style={{fontSize:18}}>🎵</span>À venir</button>
-        <button className={`mni ${page==="past"?"active":""}`} onClick={()=>nav("past")}><span style={{fontSize:18}}>🎭</span>Passés</button>
-        <button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}><span style={{fontSize:18}}>👑</span>Be a Jury</button>
-        {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}><span style={{fontSize:18}}>🔐</span>Login</button>}
-        {role&&<button className={`mni ${page==="profile"?"active":""}`} onClick={()=>nav("profile")}><span style={{fontSize:18}}>👤</span>Mon profil</button>}
-        {role==="artist"&&<button className={`mni ${page==="artist-dash"?"active":""}`} onClick={()=>nav("artist-dash")}><span style={{fontSize:18}}>👑</span>Mon espace</button>}
-        {role==="admin"&&<button className={`mni ${page==="admin"?"active":""}`} onClick={()=>nav("admin")}><span style={{fontSize:18}}>🔑</span>Admin</button>}
-        {role&&<button className="mni" onClick={async()=>{await supabase.auth.signOut();setRole(null);setUser(null);nav("home");}}><span style={{fontSize:18}}>🚪</span>Quitter</button>}
+        <button className={`mni ${page==="home"?"active":""}`} onClick={()=>nav("home")}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 12L12 4L21 12"/><path d="M5 10V20H19V10"/></svg>
+          Accueil
+        </button>
+        <button className={`mni ${page==="upcoming"||page==="past"?"active":""}`} onClick={()=>nav("upcoming")}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2V6M8 2V6M3 10H21"/><circle cx="12" cy="16" r="2"/></svg>
+          Concerts
+        </button>
+        {user?(
+          <button className="mni" onClick={()=>nav("publish-moment")} style={{marginTop:-12}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto",boxShadow:"0 2px 12px rgba(201,168,76,0.3)"}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 16L8 9L12 13L16 9L18 16Z" fill="#000" opacity="0.8"/><rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="#000" opacity="0.6"/></svg>
+            </div>
+            <span style={{fontSize:7,marginTop:2,display:"block"}}>Moment</span>
+          </button>
+        ):(
+          <button className={`mni`} onClick={()=>nav("login")} style={{marginTop:-12}}>
+            <div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto",boxShadow:"0 2px 12px rgba(201,168,76,0.3)"}}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 16L8 9L12 13L16 9L18 16Z" fill="#000" opacity="0.8"/><rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="#000" opacity="0.6"/></svg>
+            </div>
+            <span style={{fontSize:7,marginTop:2,display:"block"}}>Moment</span>
+          </button>
+        )}
+        <button className={`mni ${page==="become-jury"&&user?"active":""}`} onClick={()=>nav("become-jury")}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9Z"/></svg>
+          Jury
+        </button>
+        {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1.5"/><path d="M8 11V7A4 4 0 0116 7V11"/></svg>
+          Login
+        </button>}
+        {role&&<button className={`mni ${page==="profile"||page==="artist-dash"||page==="admin"?"active":""}`} onClick={()=>role==="artist"?nav("artist-dash"):role==="admin"?nav("admin"):nav("profile")}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20C4 16 8 14 12 14C16 14 20 16 20 20"/></svg>
+          {role==="artist"?"Espace":role==="admin"?"Admin":"Profil"}
+        </button>}
       </div>
-    </>
+    </div>
   );
 }
