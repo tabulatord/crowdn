@@ -2679,15 +2679,24 @@ export default function App() {
           <div style={{background:"#111",border:"1px solid rgba(201,168,76,0.3)",padding:32,maxWidth:400,width:"100%",textAlign:"center"}}>
             <Crown size={32}/>
             <h2 className="fd" style={{fontSize:22,fontWeight:400,letterSpacing:2,margin:"12px 0 8px"}}>Nouveau mot de passe</h2>
-            <p style={{fontSize:12,color:"#888",marginBottom:20}}>Choisis ton nouveau mot de passe (6 caractères minimum)</p>
-            <input className="ifield" type="password" placeholder="Nouveau mot de passe" value={newPwd} onChange={e=>setNewPwd(e.target.value)} style={{marginBottom:12}}/>
+            <p style={{fontSize:12,color:"#888",marginBottom:16}}>8 caractères minimum + 1 majuscule + 1 chiffre</p>
+            <input className="ifield" type="password" placeholder="Nouveau mot de passe" value={newPwd} onChange={e=>setNewPwd(e.target.value)} style={{marginBottom:10}}/>
+            {newPwd.length>0&&(
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center",marginBottom:12}}>
+                <span style={{fontSize:9,padding:"2px 8px",background:newPwd.length>=8?"rgba(76,200,100,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${newPwd.length>=8?"rgba(76,200,100,0.3)":"rgba(255,50,50,0.3)"}`,color:newPwd.length>=8?"#4CC864":"#FF5050"}}>{newPwd.length>=8?"✓":"✗"} 8+ caractères</span>
+                <span style={{fontSize:9,padding:"2px 8px",background:/[A-Z]/.test(newPwd)?"rgba(76,200,100,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${/[A-Z]/.test(newPwd)?"rgba(76,200,100,0.3)":"rgba(255,50,50,0.3)"}`,color:/[A-Z]/.test(newPwd)?"#4CC864":"#FF5050"}}>{/[A-Z]/.test(newPwd)?"✓":"✗"} Majuscule</span>
+                <span style={{fontSize:9,padding:"2px 8px",background:/[0-9]/.test(newPwd)?"rgba(76,200,100,0.1)":"rgba(255,50,50,0.1)",border:`1px solid ${/[0-9]/.test(newPwd)?"rgba(76,200,100,0.3)":"rgba(255,50,50,0.3)"}`,color:/[0-9]/.test(newPwd)?"#4CC864":"#FF5050"}}>{/[0-9]/.test(newPwd)?"✓":"✗"} Chiffre</span>
+              </div>
+            )}
             {resetMsg&&<p style={{fontSize:11,color:resetMsg.includes("✓")?"#4CC864":"#FF5050",marginBottom:12}}>{resetMsg}</p>}
-            <button className="bp" style={{width:"100%",padding:"12px",fontSize:11,letterSpacing:2}} onClick={async()=>{
-              if(newPwd.length<6){setResetMsg("6 caractères minimum");return;}
+            <button className="bp" style={{width:"100%",padding:"12px",fontSize:11,letterSpacing:2,opacity:(newPwd.length<8||!/[A-Z]/.test(newPwd)||!/[0-9]/.test(newPwd))?0.5:1}} onClick={async()=>{
+              if(newPwd.length<8){setResetMsg("8 caractères minimum");return;}
+              if(!/[A-Z]/.test(newPwd)){setResetMsg("Au moins une majuscule");return;}
+              if(!/[0-9]/.test(newPwd)){setResetMsg("Au moins un chiffre");return;}
               const{error}=await supabase.auth.updateUser({password:newPwd});
               if(error){setResetMsg("Erreur : "+error.message);}
               else{setResetMsg("Mot de passe modifié ✓");setTimeout(()=>{setShowResetPwd(false);setNewPwd("");setResetMsg("");nav("home");},2000);}
-            }}>Confirmer</button>
+            }} disabled={newPwd.length<8||!/[A-Z]/.test(newPwd)||!/[0-9]/.test(newPwd)}>Confirmer</button>
           </div>
         </div>
       )}
