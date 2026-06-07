@@ -2448,7 +2448,9 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
       {toast&&<div className="toast">{toast}</div>}
     </div>
   );
-}({user,social,nav,upcomingData,artistImages,role,userArtistName}) {
+}
+
+function UserProfile({user,social,nav,upcomingData,artistImages,role,userArtistName}) {
   const {follows,attending,toggleFollow,isCertified}=social||{follows:[],attending:[]};
   const attendingConcerts=(upcomingData||[]).filter(c=>attending.includes(c.id));
   const genreCounts={};
