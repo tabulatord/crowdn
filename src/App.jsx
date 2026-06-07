@@ -213,7 +213,8 @@ const PAST_DEFAULT = [
 const JURY_TYPES = [
   {icon:"📰",type:"Journaliste",tag:"Officiel",desc:"Critique musical ou journaliste culturel avec expérience live reconnue.",color:"#E8C96A"},
   {icon:"🎶",type:"Acteur de la musique",tag:"Officiel",desc:"Professionnel de l'industrie : manager, tourneur, directeur artistique, booker.",color:"#E8C96A"},
-  {icon:"🎤",type:"Fan de musique live",tag:"Communauté",desc:"Fan passionné du live. Tu déclares tes 5 genres préférés — CROWDN détermine si tu es Fan ou Non-fan selon chaque concert assigné.",color:"#C9A84C"},
+  {icon:"🎤",type:"Fan du genre",tag:"Communauté",desc:"Fan passionné du genre musical de l'artiste évalué. Son expertise vient de sa connaissance approfondie.",color:"#C9A84C"},
+  {icon:"👀",type:"Non-fan du genre",tag:"Communauté",desc:"Découvre un genre musical hors de son top 5. Son regard neuf apporte un point de vue sans biais.",color:"#C9A84C"},
 ];
 
 const CRITERIA = [
