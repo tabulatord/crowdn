@@ -2275,7 +2275,7 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
         ))}
       </div>
       <div style={{display:"flex",borderBottom:"1px solid rgba(201,168,76,0.12)",marginBottom:24}}>
-        {["upcoming","passés","jurés","suggestions","utilisateurs"].map(t=>(
+        {["upcoming","passés","jurés","suggestions","utilisateurs","salles"].map(t=>(
           <button key={t} style={{padding:"12px 22px",fontFamily:"'Montserrat',sans-serif",fontWeight:600,fontSize:10,letterSpacing:2,textTransform:"uppercase",background:"none",border:"none",borderBottom:tab===t?`2px solid ${GOLD}`:"2px solid transparent",color:tab===t?GOLD:"#666",cursor:"pointer",transition:"all 0.2s",marginBottom:-1}} onClick={()=>setTab(t)}>{t}{t==="suggestions"&&suggestions.length>0?` (${suggestions.length})`:""}{t==="utilisateurs"?` (${users.length})`:""}</button>
         ))}
       </div>
@@ -2415,12 +2415,40 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
           </div>
         </div>
       )}
+      {tab==="salles"&&(
+        <div>
+          <p style={{fontSize:11,color:"#888",marginBottom:16}}>Salles référencées par ville — visible uniquement admin</p>
+          {["Paris","Lyon","Nantes","Lille","Bordeaux","Toulouse","Marseille"].map(city=>{
+            const cityData=(upcomingData||[]).filter(c=>c.city===city);
+            const venues=[...new Set(cityData.map(c=>c.venue))].sort();
+            if(!venues.length) return null;
+            return (
+              <div key={city} style={{marginBottom:20}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+                  <p className="sl" style={{fontSize:10}}>{city}</p>
+                  <span style={{fontSize:9,color:"#666"}}>{cityData.length} concert{cityData.length>1?"s":""}</span>
+                </div>
+                {venues.map(v=>{
+                  const count=cityData.filter(c=>c.venue===v).length;
+                  const cat=cityData.find(c=>c.venue===v)?.category||"";
+                  const catLabel={"Olympia Class":"O","Zenith Class":"Z","Arena Class":"A","Stadium Class":"S"}[cat]||"?";
+                  return (
+                    <div key={v} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:BG2,border:"1px solid rgba(201,168,76,0.06)",marginBottom:4}}>
+                      <span style={{width:20,height:20,border:"1px solid rgba(201,168,76,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:GOLD}}>{catLabel}</span>
+                      <span style={{flex:1,fontSize:11}}>{v}</span>
+                      <span style={{fontSize:9,color:"#666"}}>{count} concert{count>1?"s":""}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {toast&&<div className="toast">{toast}</div>}
     </div>
   );
-}
-
-function UserProfile({user,social,nav,upcomingData,artistImages,role,userArtistName}) {
+}({user,social,nav,upcomingData,artistImages,role,userArtistName}) {
   const {follows,attending,toggleFollow,isCertified}=social||{follows:[],attending:[]};
   const attendingConcerts=(upcomingData||[]).filter(c=>attending.includes(c.id));
   const genreCounts={};
