@@ -1410,6 +1410,8 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
         setTimeout(()=>{setStep("auth");setMode("login");setSuccess("Email vérifié ? Connecte-toi !");},4000);
       } else {
         const profileLabels={artist:"Artiste",journalist:"Journaliste",music_pro:"Acteur de la musique"};
+        const profileEmails={artist:"artists@crowdn.fr",journalist:"press@crowdn.fr",music_pro:"pro@crowdn.fr"};
+        const contactFor=profileEmails[profileType]||"contact@crowdn.fr";
         await supabase.from("jury_applications").insert({
           name,email,
           profile_type:profileType,
@@ -1426,9 +1428,10 @@ function Login({nav,onLogin,wantsJury:initWantsJury=false}) {
             <p>Notre équipe va vérifier tes informations. Tu recevras un email dès que ton profil sera validé.</p>
             <p>En attendant, tu peux déjà utiliser CROWDN avec un accès standard.</p>
             <p style="color:#C9A84C;margin-top:24px">— L'équipe CROWDN</p>
+            <p style="font-size:11px;color:#666;margin-top:12px">Contact : ${contactFor}</p>
           </div>`
         );
-        await sendEmail("contact@crowdn.fr","🔔 Nouvelle demande profil — CROWDN",
+        await sendEmail(contactFor,"🔔 Nouvelle demande profil — CROWDN",
           `<div style="font-family:sans-serif;padding:20px">
             <h2>Nouvelle demande : ${profileLabels[profileType]}</h2>
             <p><strong>Nom :</strong> ${name}</p>
