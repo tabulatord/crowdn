@@ -2537,6 +2537,24 @@ export default function App() {
     }
   },[]);
 
+  // Auto-déconnexion après 30 min d'inactivité (sauf admin)
+  useEffect(()=>{
+    if(!user||role==="admin") return;
+    let timer;
+    const TIMEOUT=30*60*1000;
+    const resetTimer=()=>{
+      clearTimeout(timer);
+      timer=setTimeout(async()=>{
+        await supabase.auth.signOut();
+        setRole(null);setUser(null);setPage("home");
+      },TIMEOUT);
+    };
+    const events=["mousedown","touchstart","keydown","scroll"];
+    events.forEach(e=>window.addEventListener(e,resetTimer,{passive:true}));
+    resetTimer();
+    return()=>{clearTimeout(timer);events.forEach(e=>window.removeEventListener(e,resetTimer));};
+  },[user,role]);
+
   useEffect(()=>{
     supabase.auth.getSession().then(({data:{session}})=>{
       if(session){
