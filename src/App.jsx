@@ -542,59 +542,138 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
         </div>
       ):(
       <>
-      {/* ═══ NOT LOGGED IN → Landing page ═══ */}
-      <div className="hero-grid" style={{display:"grid",background:`radial-gradient(ellipse at 40% 55%,rgba(201,168,76,0.07) 0%,transparent 60%),#0A0A0A`,paddingTop:64,overflow:"hidden",position:"relative"}}>
-        <div style={{position:"absolute",inset:0,backgroundImage:"repeating-linear-gradient(0deg,transparent,transparent 60px,rgba(201,168,76,0.015) 60px,rgba(201,168,76,0.015) 61px),repeating-linear-gradient(90deg,transparent,transparent 60px,rgba(201,168,76,0.015) 60px,rgba(201,168,76,0.015) 61px)",pointerEvents:"none"}}/>
+      {/* ═══ NOT LOGGED IN → Hero rotatif 3 modes ═══ */}
+      {(()=>{
+        const [mode]=React.useState(()=>Math.floor(Math.random()*3));
+        const featuredArtist=U[Math.floor(Math.random()*Math.min(5,U.length))]||U[0];
+        const nextConcert=U[0];
 
-        {/* Left — texte */}
-        <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"80px 40px 80px 60px",position:"relative",zIndex:1}}>
-          <div style={{textAlign:"center",maxWidth:480}}>
-            <div style={{marginBottom:24}}><Crown size={64}/></div>
-            <div style={{marginBottom:10,animation:"fadeUp 0.8s 0.3s ease both",opacity:0}}>
-              <span style={{fontWeight:800,fontSize:"clamp(34px,5vw,56px)",letterSpacing:"10px",background:"linear-gradient(135deg,#8B6914,#C9A84C,#E8C96A,#C9A84C)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>CROWD</span>
-              <span className="fd" style={{fontSize:"clamp(34px,5vw,56px)",fontWeight:700,color:GOLD}}>N</span>
-            </div>
-            <p style={{fontSize:10,fontWeight:400,letterSpacing:"5px",color:"#888",textTransform:"uppercase",marginBottom:20,animation:"fadeUp 0.8s 0.5s ease both",opacity:0}}>Couronné par la Foule</p>
-            <div className="gd" style={{width:100,margin:"0 auto 28px"}}/>
-            <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",animation:"fadeUp 0.8s 0.7s ease both",opacity:0}}>
-              <button className="bp" onClick={()=>nav("login")}>Rejoindre CROWDN</button>
-              <button className="bo" onClick={()=>nav("upcoming")}>Concerts à venir</button>
-            </div>
-            <div style={{display:"flex",gap:36,justifyContent:"center",marginTop:48,animation:"fadeUp 0.8s 0.9s ease both",opacity:0}}>
-              {[[String(U.length),"Concerts à venir"]].map(([n,l])=>(
-                <div key={l} style={{textAlign:"center"}}>
-                  <div className="fd gt" style={{fontSize:28,fontWeight:700}}>{n}</div>
-                  <div style={{fontSize:9,letterSpacing:2,color:"#666",textTransform:"uppercase",marginTop:4}}>{l}</div>
+        return (
+          <div style={{position:"relative",height:"100vh",overflow:"hidden",background:"#0A0A0A",paddingTop:64}}>
+            <div style={{opacity:1,height:"100%"}}>
+
+              {/* MODE 0 — SNAPCHAT STYLE : Moment live */}
+              {mode===0&&(
+                <div style={{height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+                  {/* Background glow */}
+                  <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%)"}}/>
+                  {/* Big crown glow */}
+                  <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)",filter:"blur(40px)"}}/>
+                  {/* Story circles */}
+                  {[
+                    {size:320,opacity:0.03},{size:240,opacity:0.05},{size:160,opacity:0.08}
+                  ].map((c,i)=>(
+                    <div key={i} style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",width:c.size,height:c.size,border:`1px solid rgba(201,168,76,${c.opacity*3})`,borderRadius:"50%"}}/>
+                  ))}
+                  {/* Crown button large */}
+                  <div style={{width:88,height:88,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:32,boxShadow:"0 0 60px rgba(201,168,76,0.25)",position:"relative",zIndex:2}}>
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                      <path d="M6 16L8 9L12 13L16 9L18 16Z" fill="#000" opacity="0.8"/>
+                      <rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="#000" opacity="0.6"/>
+                    </svg>
+                  </div>
+                  <p style={{fontSize:9,letterSpacing:5,color:GOLD,fontWeight:700,textTransform:"uppercase",marginBottom:12,position:"relative",zIndex:2}}>Moment</p>
+                  <h2 className="fd" style={{fontSize:"clamp(28px,5vw,52px)",fontWeight:300,letterSpacing:4,textAlign:"center",lineHeight:1.2,position:"relative",zIndex:2,marginBottom:12}}>
+                    Tu y étais.<br/>Partage-le.
+                  </h2>
+                  <p style={{fontSize:11,color:"#555",letterSpacing:2,position:"relative",zIndex:2,marginBottom:36}}>Seuls ceux présents au concert peuvent publier</p>
+                  <button className="bp" style={{position:"relative",zIndex:2}} onClick={()=>nav("login")}>Rejoindre CROWDN</button>
                 </div>
-              ))}
+              )}
+
+              {/* MODE 1 — INSTAGRAM STYLE : Profil artiste */}
+              {mode===1&&featuredArtist&&(
+                <div style={{height:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+                  {/* Background gradient */}
+                  <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse 70% 60% at 30% 50%, rgba(201,168,76,0.06) 0%, transparent 70%), #0A0A0A`}}/>
+                  {/* Faux profile card large */}
+                  <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:460,margin:"0 auto",padding:"0 24px"}}>
+                    {/* Artist avatar */}
+                    <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:28}}>
+                      <div style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",padding:2,flexShrink:0}}>
+                        <div style={{width:"100%",height:"100%",borderRadius:"50%",background:"#1a1a1a",border:"3px solid #0A0A0A",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          <span style={{fontSize:14,fontWeight:700,color:GOLD}}>{featuredArtist.artist?.slice(0,2).toUpperCase()}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                          <span style={{fontSize:18,fontWeight:700}}>{featuredArtist.artist}</span>
+                          <span style={{fontSize:12,color:GOLD}}>👑</span>
+                        </div>
+                        <span style={{fontSize:9,color:"#555",letterSpacing:2}}>ARTISTE CERTIFIÉ CROWDN</span>
+                      </div>
+                    </div>
+                    {/* Stats */}
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"rgba(201,168,76,0.06)",marginBottom:24}}>
+                      {[["12.4K","Followers"],["8","Moments"],["3","Concerts"]].map(([n,l])=>(
+                        <div key={l} style={{background:"#0A0A0A",padding:"16px 12px",textAlign:"center"}}>
+                          <div className="fd" style={{fontSize:22,fontWeight:700,color:GOLD}}>{n}</div>
+                          <div style={{fontSize:8,color:"#555",letterSpacing:2,textTransform:"uppercase",marginTop:3}}>{l}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Moments grid */}
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,marginBottom:28}}>
+                      {["#0d1117","#111827","#0f172a","#1c1917","#14532d","#1e1b4b"].map((bg,i)=>(
+                        <div key={i} style={{aspectRatio:"1",background:bg,border:"1px solid rgba(201,168,76,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          <span style={{fontSize:18,opacity:0.3}}>🎵</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p style={{fontSize:9,color:"#444",textAlign:"center",letterSpacing:2,marginBottom:20}}>SUR CROWDN · LES ARTISTES PARTAGENT LEUR LIVE</p>
+                    <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+                      <button className="bp" style={{fontSize:9}} onClick={()=>nav("login")}>Rejoindre</button>
+                      <button className="bo" style={{fontSize:9}} onClick={()=>nav("upcoming")}>Voir les concerts</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* MODE 2 — LIVE NATION STYLE : Prochain concert */}
+              {mode===2&&nextConcert&&(
+                <div style={{height:"100%",position:"relative",overflow:"hidden",display:"flex",alignItems:"flex-end"}}>
+                  {/* Concert atmosphere */}
+                  <div style={{position:"absolute",inset:0}}>
+                    {/* Gradient bg */}
+                    <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#0a0a0a 0%,#1a1205 40%,#0a0a0a 100%)"}}/>
+                    {/* Light beams */}
+                    {["-30%","0%","30%"].map((x,i)=>(
+                      <div key={i} style={{position:"absolute",top:0,left:"50%",transform:`translateX(${x})`,width:"1px",height:"60%",background:`linear-gradient(to bottom, rgba(201,168,76,${0.15+i*0.05}), transparent)`,filter:"blur(8px)"}}/>
+                    ))}
+                    {/* Crowd silhouette */}
+                    <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"linear-gradient(to top,#0A0A0A 20%,transparent)"}}/>
+                    <svg style={{position:"absolute",bottom:0,left:0,right:0,width:"100%",opacity:0.4}} height="200" viewBox="0 0 1440 200" preserveAspectRatio="none">
+                      <path fill="#050505" d="M0,200 L0,120 C60,100 80,115 120,108 C160,101 180,85 220,92 C260,99 280,115 320,108 C360,101 380,82 420,88 C460,94 480,112 520,105 C560,98 575,78 615,84 C650,90 670,110 710,102 C750,94 768,72 805,78 C842,84 860,106 900,98 C940,90 955,68 992,74 C1028,80 1048,104 1088,96 C1128,88 1142,64 1178,70 C1215,76 1235,102 1275,94 C1315,86 1335,60 1370,66 C1405,72 1425,100 1440,92 L1440,200 Z"/>
+                    </svg>
+                    {/* Glow spot */}
+                    <div style={{position:"absolute",top:"25%",left:"50%",transform:"translateX(-50%)",width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%)",filter:"blur(30px)"}}/>
+                  </div>
+                  {/* Content */}
+                  <div style={{position:"relative",zIndex:10,padding:"0 48px 60px",width:"100%"}}>
+                    <p style={{fontSize:8,letterSpacing:5,color:GOLD,fontWeight:700,textTransform:"uppercase",marginBottom:16}}>Prochain concert référencé</p>
+                    <h1 className="fd" style={{fontSize:"clamp(36px,7vw,80px)",fontWeight:300,letterSpacing:2,lineHeight:1.05,marginBottom:12}}>{nextConcert.artist}</h1>
+                    <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:28,flexWrap:"wrap"}}>
+                      <span style={{fontSize:12,color:"#888"}}>{nextConcert.date}</span>
+                      <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(201,168,76,0.3)"}}/>
+                      <span style={{fontSize:12,color:"#888"}}>{nextConcert.venue}</span>
+                      <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(201,168,76,0.3)"}}/>
+                      <span style={{fontSize:12,color:"#888"}}>{nextConcert.city}</span>
+                      <span style={{padding:"3px 10px",border:`1px solid rgba(201,168,76,0.3)`,fontSize:9,fontWeight:700,color:GOLD,letterSpacing:2}}>
+                        {nextConcert.category?.replace(" Class","")||"S"}
+                      </span>
+                    </div>
+                    <div style={{display:"flex",gap:12}}>
+                      <button className="bp" style={{fontSize:10,letterSpacing:2}} onClick={()=>nav("upcoming-detail",nextConcert)}>Réserver</button>
+                      <button className="bo" style={{fontSize:10,letterSpacing:2}} onClick={()=>nav("login")}>Rejoindre CROWDN</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
-        </div>
-
-        {/* Right — top concerts (desktop only) */}
-        <div className="hero-right" style={{borderLeft:"1px solid rgba(201,168,76,0.08)",background:"rgba(255,255,255,0.01)",padding:"80px 40px",display:"flex",flexDirection:"column",justifyContent:"center",overflowY:"auto"}}>
-          <p className="sl" style={{marginBottom:8}}>À venir</p>
-          <h2 className="fd" style={{fontSize:28,fontWeight:400,letterSpacing:2,marginBottom:28}}>Prochains concerts</h2>
-          <div style={{display:"flex",flexDirection:"column",gap:12}}>
-            {U.slice(0,5).map((c,i)=>(
-              <div key={c.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.1)",cursor:"pointer",transition:"all 0.2s",animation:`fadeUp 0.5s ${i*0.1}s ease both`,opacity:0}} onClick={()=>nav("upcoming-detail",c)}
-                onMouseOver={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.35)"}
-                onMouseOut={e=>e.currentTarget.style.borderColor="rgba(201,168,76,0.1)"}>
-                <ArtistImg name={c.artist} fallback={c.img} size={36} images={artistImages}/>
-                <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontWeight:700,fontSize:14,marginBottom:2}}>{c.artist}</p>
-                  <p style={{fontSize:11,color:"#888",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.date} · {c.venue}</p>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-                  <span className="ub" style={{fontSize:8}}><span className="ld"/>{c.daysLeft}j</span>
-                  <span className="tag" style={{fontSize:7,padding:"2px 6px"}}>{c.category.split(" ")[0]}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button className="bo" style={{marginTop:20,fontSize:9,padding:"10px 20px",width:"100%"}} onClick={()=>nav("upcoming")}>Voir tous les concerts →</button>
-        </div>
-      </div>
+        );
+      })()}
 
       <GenreStrip onGenreClick={g=>nav("upcoming",{filterGenre:g})}/>
 
@@ -1082,6 +1161,33 @@ function PastDetail({c,nav,artistImages={}}) {
   );
 }
 
+function PresaleButton({artistName,user,onFollow}) {
+  const [registered,setRegistered]=useState(false);
+  const [loading,setLoading]=useState(false);
+
+  useEffect(()=>{
+    if(!user)return;
+    supabase.from("presale_registrations").select("id").eq("user_id",user.id).eq("artist_name",artistName).single()
+      .then(({data})=>{if(data)setRegistered(true);});
+  },[user,artistName]);
+
+  const handleRegister=async()=>{
+    if(!user||loading)return;
+    setLoading(true);
+    await supabase.from("presale_registrations").insert({user_id:user.id,artist_name:artistName,email:user.email});
+    setRegistered(true);
+    onFollow?.();
+    setLoading(false);
+  };
+
+  return (
+    <button onClick={handleRegister} disabled={registered||loading}
+      style={{padding:"10px 28px",background:registered?"rgba(76,200,100,0.1)":"rgba(201,168,76,0.08)",border:`1px solid ${registered?"rgba(76,200,100,0.4)":"rgba(201,168,76,0.3)"}`,color:registered?"#4CC864":GOLD,fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:registered?"default":"pointer",fontFamily:"'Montserrat',sans-serif"}}>
+      {registered?"Prévente ✓":loading?"...":"🎟 Prévente"}
+    </button>
+  );
+}
+
 function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}) {
   if(!artistName) return null;
   const artist=ARTISTS[artistName];
@@ -1102,7 +1208,10 @@ function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}
         {artist&&<p style={{fontSize:12,color:"#888",lineHeight:1.8,maxWidth:480,margin:"0 auto 16px"}}>{artist.bio}</p>}
         {!artist&&<p style={{fontSize:12,color:"#888",marginBottom:16}}>Artiste présent sur CROWDN</p>}
         {user&&social&&social.toggleFollow?
-          <button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",marginBottom:16}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
+          <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:16}}>
+            <button onClick={()=>social.toggleFollow(artistName)} style={{padding:"10px 28px",background:isFollowing?"transparent":"linear-gradient(135deg,#8B6914,#C9A84C)",border:isFollowing?"1px solid rgba(201,168,76,0.4)":"none",color:isFollowing?GOLD:"#000",fontSize:10,fontWeight:700,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",fontFamily:"'Montserrat',sans-serif"}}>{isFollowing?"Suivi ✓":"Suivre"}</button>
+            <PresaleButton artistName={artistName} user={user} onFollow={()=>!isFollowing&&social.toggleFollow(artistName)}/>
+          </div>
           :<button onClick={()=>nav("login")} className="bp" style={{padding:"10px 28px",fontSize:10,letterSpacing:2,marginBottom:16}}>Se connecter pour suivre</button>
         }
       </div>
@@ -2275,7 +2384,7 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
         ))}
       </div>
       <div style={{display:"flex",borderBottom:"1px solid rgba(201,168,76,0.12)",marginBottom:24}}>
-        {["upcoming","passés","jurés","suggestions","utilisateurs","salles"].map(t=>(
+        {["upcoming","passés","jurés","suggestions","utilisateurs","salles","préventes"].map(t=>(
           <button key={t} style={{padding:"12px 22px",fontFamily:"'Montserrat',sans-serif",fontWeight:600,fontSize:10,letterSpacing:2,textTransform:"uppercase",background:"none",border:"none",borderBottom:tab===t?`2px solid ${GOLD}`:"2px solid transparent",color:tab===t?GOLD:"#666",cursor:"pointer",transition:"all 0.2s",marginBottom:-1}} onClick={()=>setTab(t)}>{t}{t==="suggestions"&&suggestions.length>0?` (${suggestions.length})`:""}{t==="utilisateurs"?` (${users.length})`:""}</button>
         ))}
       </div>
@@ -2445,7 +2554,120 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
           })}
         </div>
       )}
+      {tab==="préventes"&&<PresaleAdmin show={show}/>}
       {toast&&<div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+function PresaleAdmin({show}) {
+  const [presales,setPresales]=useState([]);
+  const [artists,setArtists]=useState([]);
+  const [selectedArtist,setSelectedArtist]=useState("");
+  const [nbWinners,setNbWinners]=useState(1000);
+  const [loading,setLoading]=useState(false);
+  const [drawn,setDrawn]=useState(false);
+
+  useEffect(()=>{
+    supabase.from("presale_registrations").select("artist_name").then(({data})=>{
+      if(data){
+        const unique=[...new Set(data.map(d=>d.artist_name))];
+        setArtists(unique);
+        if(unique.length>0)setSelectedArtist(unique[0]);
+      }
+    });
+  },[]);
+
+  useEffect(()=>{
+    if(!selectedArtist)return;
+    supabase.from("presale_registrations").select("*").eq("artist_name",selectedArtist).order("created_at").then(({data})=>{if(data)setPresales(data);});
+  },[selectedArtist]);
+
+  const runDraw=async()=>{
+    if(!selectedArtist||loading)return;
+    setLoading(true);
+    const shuffled=[...presales].sort(()=>Math.random()-0.5);
+    const winners=shuffled.slice(0,Math.min(nbWinners,shuffled.length));
+    const losers=shuffled.slice(Math.min(nbWinners,shuffled.length));
+    const code=()=>"CRWD-"+Math.random().toString(36).substr(2,4).toUpperCase()+"-"+Math.random().toString(36).substr(2,4).toUpperCase();
+    for(const w of winners){
+      await supabase.from("presale_registrations").update({status:"selected",code:code()}).eq("id",w.id);
+    }
+    for(const l of losers){
+      await supabase.from("presale_registrations").update({status:"not_selected"}).eq("id",l.id);
+    }
+    setDrawn(true);
+    show?.("Tirage effectué ✓ — "+winners.length+" gagnants");
+    const{data}=await supabase.from("presale_registrations").select("*").eq("artist_name",selectedArtist).order("created_at");
+    if(data)setPresales(data);
+    setLoading(false);
+  };
+
+  return (
+    <div>
+      <p style={{fontSize:11,color:"#888",marginBottom:16}}>Gestion des préventes — Tirage au sort et envoi des codes</p>
+      {artists.length===0?(
+        <p style={{fontSize:11,color:"#555",fontStyle:"italic"}}>Aucune inscription prévente pour l'instant</p>
+      ):(
+        <div>
+          <div style={{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}}>
+            <select className="ifield" style={{cursor:"pointer",flex:1}} value={selectedArtist} onChange={e=>setSelectedArtist(e.target.value)}>
+              {artists.map(a=><option key={a}>{a}</option>)}
+            </select>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:20}}>
+            <div style={{background:BG2,padding:16,textAlign:"center",border:"1px solid rgba(201,168,76,0.08)"}}>
+              <div style={{fontSize:24,fontWeight:700,color:GOLD}}>{presales.length}</div>
+              <div style={{fontSize:9,color:"#666",letterSpacing:1,textTransform:"uppercase"}}>Inscrits</div>
+            </div>
+            <div style={{background:BG2,padding:16,textAlign:"center",border:"1px solid rgba(76,200,100,0.1)"}}>
+              <div style={{fontSize:24,fontWeight:700,color:"#4CC864"}}>{presales.filter(p=>p.status==="selected").length}</div>
+              <div style={{fontSize:9,color:"#666",letterSpacing:1,textTransform:"uppercase"}}>Sélectionnés</div>
+            </div>
+            <div style={{background:BG2,padding:16,textAlign:"center",border:"1px solid rgba(255,80,80,0.1)"}}>
+              <div style={{fontSize:24,fontWeight:700,color:"#FF5050"}}>{presales.filter(p=>p.status==="not_selected").length}</div>
+              <div style={{fontSize:9,color:"#666",letterSpacing:1,textTransform:"uppercase"}}>Non sélectionnés</div>
+            </div>
+          </div>
+          {!drawn&&(
+            <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.15)",padding:20,marginBottom:16}}>
+              <p style={{fontSize:11,color:GOLD,fontWeight:700,marginBottom:12}}>Lancer le tirage au sort</p>
+              <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:12}}>
+                <label style={{fontSize:10,color:"#888"}}>Nombre de gagnants :</label>
+                <input type="number" className="ifield" value={nbWinners} onChange={e=>setNbWinners(Number(e.target.value))} style={{width:100}}/>
+              </div>
+              <p style={{fontSize:9,color:"#666",marginBottom:12}}>Sur {presales.length} inscrits → {Math.min(nbWinners,presales.length)} seront sélectionnés aléatoirement</p>
+              <button className="bp" style={{padding:"12px 24px",fontSize:10,letterSpacing:2,opacity:loading?0.6:1}} onClick={runDraw} disabled={loading}>
+                {loading?"Tirage en cours...":"🎲 Lancer le tirage"}
+              </button>
+            </div>
+          )}
+          {drawn&&(
+            <div style={{display:"flex",gap:10,marginBottom:16}}>
+              <button className="bp" style={{padding:"12px 20px",fontSize:9,letterSpacing:1}} onClick={async()=>{
+                show?.("Envoi des emails en cours...");
+              }}>📧 Envoyer codes aux gagnants</button>
+              <button className="bo" style={{padding:"12px 20px",fontSize:9,letterSpacing:1}} onClick={async()=>{
+                show?.("Emails non-sélectionnés envoyés");
+              }}>📧 Notifier non-sélectionnés</button>
+            </div>
+          )}
+          <div style={{maxHeight:300,overflowY:"auto"}}>
+            {presales.slice(0,50).map(p=>(
+              <div key={p.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:BG2,border:"1px solid rgba(201,168,76,0.04)",marginBottom:4}}>
+                <div style={{flex:1}}>
+                  <span style={{fontSize:11}}>{p.email}</span>
+                  {p.code&&<span style={{fontSize:9,color:GOLD,marginLeft:8,fontFamily:"monospace"}}>{p.code}</span>}
+                </div>
+                <span style={{fontSize:8,padding:"2px 6px",border:`1px solid ${p.status==="selected"?"rgba(76,200,100,0.4)":p.status==="not_selected"?"rgba(255,80,80,0.3)":"rgba(255,255,255,0.1)"}`,color:p.status==="selected"?"#4CC864":p.status==="not_selected"?"#FF5050":"#888"}}>
+                  {p.status==="selected"?"✓ Sélectionné":p.status==="not_selected"?"✗ Non sélectionné":"En attente"}
+                </span>
+              </div>
+            ))}
+            {presales.length>50&&<p style={{fontSize:10,color:"#555",textAlign:"center",padding:8}}>{presales.length-50} autres inscrits...</p>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
