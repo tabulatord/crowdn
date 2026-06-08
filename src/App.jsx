@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -381,6 +381,112 @@ function PastCard({c,idx,onClick,artistImages={}}) {
   );
 }
 
+function HeroLanding({nav,upcoming}) {
+  const U=upcoming||UPCOMING_DEFAULT;
+  const [mode]=useState(()=>Math.floor(Math.random()*3));
+  const featuredArtist=useMemo(()=>U[Math.floor(Math.random()*Math.min(5,U.length))]||U[0],[]);
+  const nextConcert=U[0];
+
+  return (
+    <div style={{position:"relative",height:"100vh",overflow:"hidden",background:"#0A0A0A",paddingTop:64}}>
+
+      {/* MODE 0 — Moment (Snapchat) */}
+      {mode===0&&(
+        <div style={{height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%)"}}/>
+          <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)",filter:"blur(40px)"}}/>
+          {[320,240,160].map((s,i)=>(
+            <div key={i} style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",width:s,height:s,border:"1px solid rgba(201,168,76,0.07)",borderRadius:"50%"}}/>
+          ))}
+          <div style={{width:88,height:88,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:28,boxShadow:"0 0 60px rgba(201,168,76,0.25)",position:"relative",zIndex:2}}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M6 16L8 9L12 13L16 9L18 16Z" fill="#000" opacity="0.8"/><rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="#000" opacity="0.6"/></svg>
+          </div>
+          <p style={{fontSize:9,letterSpacing:5,color:GOLD,fontWeight:700,textTransform:"uppercase",marginBottom:12,zIndex:2}}>Moment</p>
+          <h2 className="fd" style={{fontSize:"clamp(28px,5vw,52px)",fontWeight:300,letterSpacing:4,textAlign:"center",lineHeight:1.2,zIndex:2,marginBottom:12}}>Tu y étais.<br/>Partage-le.</h2>
+          <p style={{fontSize:11,color:"#555",letterSpacing:2,zIndex:2,marginBottom:36}}>Seuls ceux présents au concert peuvent publier</p>
+          <div style={{display:"flex",gap:12,zIndex:2}}>
+            <button className="bp" onClick={()=>nav("login")}>Rejoindre CROWDN</button>
+            <button className="bo" onClick={()=>nav("upcoming")}>Concerts à venir</button>
+          </div>
+        </div>
+      )}
+
+      {/* MODE 1 — Artiste (Instagram) */}
+      {mode===1&&featuredArtist&&(
+        <div style={{height:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 70% 60% at 30% 50%, rgba(201,168,76,0.06) 0%, transparent 70%), #0A0A0A"}}/>
+          <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:460,margin:"0 auto",padding:"0 24px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:24}}>
+              <div style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",padding:2,flexShrink:0}}>
+                <div style={{width:"100%",height:"100%",borderRadius:"50%",background:"#1a1a1a",border:"3px solid #0A0A0A",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <span style={{fontSize:14,fontWeight:700,color:GOLD}}>{featuredArtist.artist?.slice(0,2).toUpperCase()}</span>
+                </div>
+              </div>
+              <div>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
+                  <span style={{fontSize:18,fontWeight:700}}>{featuredArtist.artist}</span>
+                  <span style={{fontSize:12,color:GOLD}}>👑</span>
+                </div>
+                <span style={{fontSize:9,color:"#555",letterSpacing:2}}>ARTISTE CERTIFIÉ CROWDN</span>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"rgba(201,168,76,0.06)",marginBottom:20}}>
+              {[["12.4K","Followers"],["8","Moments"],["3","Concerts"]].map(([n,l])=>(
+                <div key={l} style={{background:"#0A0A0A",padding:"14px",textAlign:"center"}}>
+                  <div className="fd" style={{fontSize:22,fontWeight:700,color:GOLD}}>{n}</div>
+                  <div style={{fontSize:8,color:"#555",letterSpacing:2,textTransform:"uppercase",marginTop:2}}>{l}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,marginBottom:24}}>
+              {["#0d1117","#111827","#0f172a","#1c1917","#14532d","#1e1b4b"].map((bg,i)=>(
+                <div key={i} style={{aspectRatio:"1",background:bg,border:"1px solid rgba(201,168,76,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:16,opacity:0.2}}>🎵</span></div>
+              ))}
+            </div>
+            <p style={{fontSize:9,color:"#333",textAlign:"center",letterSpacing:2,marginBottom:18}}>SUR CROWDN · LES ARTISTES PARTAGENT LEUR LIVE</p>
+            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+              <button className="bp" style={{fontSize:9}} onClick={()=>nav("login")}>Rejoindre</button>
+              <button className="bo" style={{fontSize:9}} onClick={()=>nav("upcoming")}>Voir les concerts</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODE 2 — Concert (Live Nation) */}
+      {mode===2&&nextConcert&&(
+        <div style={{height:"100%",position:"relative",overflow:"hidden",display:"flex",alignItems:"flex-end"}}>
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#0a0a0a 0%,#1a1205 40%,#0a0a0a 100%)"}}/>
+          {["-30%","0%","30%"].map((x,i)=>(
+            <div key={i} style={{position:"absolute",top:0,left:"50%",transform:`translateX(${x})`,width:"1px",height:"60%",background:`linear-gradient(to bottom, rgba(201,168,76,${0.12+i*0.04}), transparent)`,filter:"blur(8px)"}}/>
+          ))}
+          <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"linear-gradient(to top,#0A0A0A 20%,transparent)"}}/>
+          <svg style={{position:"absolute",bottom:0,left:0,right:0,width:"100%",opacity:0.35}} height="200" viewBox="0 0 1440 200" preserveAspectRatio="none">
+            <path fill="#050505" d="M0,200 L0,120 C60,100 80,115 120,108 C160,101 180,85 220,92 C260,99 280,115 320,108 C360,101 380,82 420,88 C460,94 480,112 520,105 C560,98 575,78 615,84 C650,90 670,110 710,102 C750,94 768,72 805,78 C842,84 860,106 900,98 C940,90 955,68 992,74 C1028,80 1048,104 1088,96 C1128,88 1142,64 1178,70 C1215,76 1235,102 1275,94 C1315,86 1335,60 1370,66 C1405,72 1425,100 1440,92 L1440,200 Z"/>
+          </svg>
+          <div style={{position:"absolute",top:"25%",left:"50%",transform:"translateX(-50%)",width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)",filter:"blur(30px)"}}/>
+          <div style={{position:"relative",zIndex:10,padding:"0 48px 60px",width:"100%"}}>
+            <p style={{fontSize:8,letterSpacing:5,color:GOLD,fontWeight:700,textTransform:"uppercase",marginBottom:14}}>Prochain concert référencé</p>
+            <h1 className="fd" style={{fontSize:"clamp(36px,7vw,80px)",fontWeight:300,letterSpacing:2,lineHeight:1.05,marginBottom:12}}>{nextConcert.artist}</h1>
+            <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:28,flexWrap:"wrap"}}>
+              <span style={{fontSize:12,color:"#888"}}>{nextConcert.date}</span>
+              <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(201,168,76,0.3)"}}/>
+              <span style={{fontSize:12,color:"#888"}}>{nextConcert.venue}</span>
+              <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(201,168,76,0.3)"}}/>
+              <span style={{fontSize:12,color:"#888"}}>{nextConcert.city}</span>
+              <span style={{padding:"3px 10px",border:"1px solid rgba(201,168,76,0.3)",fontSize:9,fontWeight:700,color:GOLD,letterSpacing:2}}>{nextConcert.category?.replace(" Class","")||"S"}</span>
+            </div>
+            <div style={{display:"flex",gap:12}}>
+              <button className="bp" style={{fontSize:10,letterSpacing:2}} onClick={()=>nav("upcoming-detail",nextConcert)}>Réserver</button>
+              <button className="bo" style={{fontSize:10,letterSpacing:2}} onClick={()=>nav("login")}>Rejoindre CROWDN</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 function HomePage({nav,upcoming,past,artistImages={},social,user}) {
   const U = upcoming||UPCOMING_DEFAULT;
   const P = past||PAST_DEFAULT;
@@ -543,137 +649,9 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
       ):(
       <>
       {/* ═══ NOT LOGGED IN → Hero rotatif 3 modes ═══ */}
-      {(()=>{
-        const [mode]=React.useState(()=>Math.floor(Math.random()*3));
-        const featuredArtist=U[Math.floor(Math.random()*Math.min(5,U.length))]||U[0];
-        const nextConcert=U[0];
+      <HeroLanding nav={nav} upcoming={U}/>
 
-        return (
-          <div style={{position:"relative",height:"100vh",overflow:"hidden",background:"#0A0A0A",paddingTop:64}}>
-            <div style={{opacity:1,height:"100%"}}>
-
-              {/* MODE 0 — SNAPCHAT STYLE : Moment live */}
-              {mode===0&&(
-                <div style={{height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
-                  {/* Background glow */}
-                  <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201,168,76,0.08) 0%, transparent 70%)"}}/>
-                  {/* Big crown glow */}
-                  <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",width:300,height:300,borderRadius:"50%",background:"radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)",filter:"blur(40px)"}}/>
-                  {/* Story circles */}
-                  {[
-                    {size:320,opacity:0.03},{size:240,opacity:0.05},{size:160,opacity:0.08}
-                  ].map((c,i)=>(
-                    <div key={i} style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-60%)",width:c.size,height:c.size,border:`1px solid rgba(201,168,76,${c.opacity*3})`,borderRadius:"50%"}}/>
-                  ))}
-                  {/* Crown button large */}
-                  <div style={{width:88,height:88,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:32,boxShadow:"0 0 60px rgba(201,168,76,0.25)",position:"relative",zIndex:2}}>
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-                      <path d="M6 16L8 9L12 13L16 9L18 16Z" fill="#000" opacity="0.8"/>
-                      <rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="#000" opacity="0.6"/>
-                    </svg>
-                  </div>
-                  <p style={{fontSize:9,letterSpacing:5,color:GOLD,fontWeight:700,textTransform:"uppercase",marginBottom:12,position:"relative",zIndex:2}}>Moment</p>
-                  <h2 className="fd" style={{fontSize:"clamp(28px,5vw,52px)",fontWeight:300,letterSpacing:4,textAlign:"center",lineHeight:1.2,position:"relative",zIndex:2,marginBottom:12}}>
-                    Tu y étais.<br/>Partage-le.
-                  </h2>
-                  <p style={{fontSize:11,color:"#555",letterSpacing:2,position:"relative",zIndex:2,marginBottom:36}}>Seuls ceux présents au concert peuvent publier</p>
-                  <button className="bp" style={{position:"relative",zIndex:2}} onClick={()=>nav("login")}>Rejoindre CROWDN</button>
-                </div>
-              )}
-
-              {/* MODE 1 — INSTAGRAM STYLE : Profil artiste */}
-              {mode===1&&featuredArtist&&(
-                <div style={{height:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}>
-                  {/* Background gradient */}
-                  <div style={{position:"absolute",inset:0,background:`radial-gradient(ellipse 70% 60% at 30% 50%, rgba(201,168,76,0.06) 0%, transparent 70%), #0A0A0A`}}/>
-                  {/* Faux profile card large */}
-                  <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:460,margin:"0 auto",padding:"0 24px"}}>
-                    {/* Artist avatar */}
-                    <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:28}}>
-                      <div style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",padding:2,flexShrink:0}}>
-                        <div style={{width:"100%",height:"100%",borderRadius:"50%",background:"#1a1a1a",border:"3px solid #0A0A0A",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          <span style={{fontSize:14,fontWeight:700,color:GOLD}}>{featuredArtist.artist?.slice(0,2).toUpperCase()}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-                          <span style={{fontSize:18,fontWeight:700}}>{featuredArtist.artist}</span>
-                          <span style={{fontSize:12,color:GOLD}}>👑</span>
-                        </div>
-                        <span style={{fontSize:9,color:"#555",letterSpacing:2}}>ARTISTE CERTIFIÉ CROWDN</span>
-                      </div>
-                    </div>
-                    {/* Stats */}
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"rgba(201,168,76,0.06)",marginBottom:24}}>
-                      {[["12.4K","Followers"],["8","Moments"],["3","Concerts"]].map(([n,l])=>(
-                        <div key={l} style={{background:"#0A0A0A",padding:"16px 12px",textAlign:"center"}}>
-                          <div className="fd" style={{fontSize:22,fontWeight:700,color:GOLD}}>{n}</div>
-                          <div style={{fontSize:8,color:"#555",letterSpacing:2,textTransform:"uppercase",marginTop:3}}>{l}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {/* Moments grid */}
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,marginBottom:28}}>
-                      {["#0d1117","#111827","#0f172a","#1c1917","#14532d","#1e1b4b"].map((bg,i)=>(
-                        <div key={i} style={{aspectRatio:"1",background:bg,border:"1px solid rgba(201,168,76,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          <span style={{fontSize:18,opacity:0.3}}>🎵</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p style={{fontSize:9,color:"#444",textAlign:"center",letterSpacing:2,marginBottom:20}}>SUR CROWDN · LES ARTISTES PARTAGENT LEUR LIVE</p>
-                    <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-                      <button className="bp" style={{fontSize:9}} onClick={()=>nav("login")}>Rejoindre</button>
-                      <button className="bo" style={{fontSize:9}} onClick={()=>nav("upcoming")}>Voir les concerts</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* MODE 2 — LIVE NATION STYLE : Prochain concert */}
-              {mode===2&&nextConcert&&(
-                <div style={{height:"100%",position:"relative",overflow:"hidden",display:"flex",alignItems:"flex-end"}}>
-                  {/* Concert atmosphere */}
-                  <div style={{position:"absolute",inset:0}}>
-                    {/* Gradient bg */}
-                    <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#0a0a0a 0%,#1a1205 40%,#0a0a0a 100%)"}}/>
-                    {/* Light beams */}
-                    {["-30%","0%","30%"].map((x,i)=>(
-                      <div key={i} style={{position:"absolute",top:0,left:"50%",transform:`translateX(${x})`,width:"1px",height:"60%",background:`linear-gradient(to bottom, rgba(201,168,76,${0.15+i*0.05}), transparent)`,filter:"blur(8px)"}}/>
-                    ))}
-                    {/* Crowd silhouette */}
-                    <div style={{position:"absolute",bottom:0,left:0,right:0,height:"40%",background:"linear-gradient(to top,#0A0A0A 20%,transparent)"}}/>
-                    <svg style={{position:"absolute",bottom:0,left:0,right:0,width:"100%",opacity:0.4}} height="200" viewBox="0 0 1440 200" preserveAspectRatio="none">
-                      <path fill="#050505" d="M0,200 L0,120 C60,100 80,115 120,108 C160,101 180,85 220,92 C260,99 280,115 320,108 C360,101 380,82 420,88 C460,94 480,112 520,105 C560,98 575,78 615,84 C650,90 670,110 710,102 C750,94 768,72 805,78 C842,84 860,106 900,98 C940,90 955,68 992,74 C1028,80 1048,104 1088,96 C1128,88 1142,64 1178,70 C1215,76 1235,102 1275,94 C1315,86 1335,60 1370,66 C1405,72 1425,100 1440,92 L1440,200 Z"/>
-                    </svg>
-                    {/* Glow spot */}
-                    <div style={{position:"absolute",top:"25%",left:"50%",transform:"translateX(-50%)",width:200,height:200,borderRadius:"50%",background:"radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%)",filter:"blur(30px)"}}/>
-                  </div>
-                  {/* Content */}
-                  <div style={{position:"relative",zIndex:10,padding:"0 48px 60px",width:"100%"}}>
-                    <p style={{fontSize:8,letterSpacing:5,color:GOLD,fontWeight:700,textTransform:"uppercase",marginBottom:16}}>Prochain concert référencé</p>
-                    <h1 className="fd" style={{fontSize:"clamp(36px,7vw,80px)",fontWeight:300,letterSpacing:2,lineHeight:1.05,marginBottom:12}}>{nextConcert.artist}</h1>
-                    <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:28,flexWrap:"wrap"}}>
-                      <span style={{fontSize:12,color:"#888"}}>{nextConcert.date}</span>
-                      <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(201,168,76,0.3)"}}/>
-                      <span style={{fontSize:12,color:"#888"}}>{nextConcert.venue}</span>
-                      <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(201,168,76,0.3)"}}/>
-                      <span style={{fontSize:12,color:"#888"}}>{nextConcert.city}</span>
-                      <span style={{padding:"3px 10px",border:`1px solid rgba(201,168,76,0.3)`,fontSize:9,fontWeight:700,color:GOLD,letterSpacing:2}}>
-                        {nextConcert.category?.replace(" Class","")||"S"}
-                      </span>
-                    </div>
-                    <div style={{display:"flex",gap:12}}>
-                      <button className="bp" style={{fontSize:10,letterSpacing:2}} onClick={()=>nav("upcoming-detail",nextConcert)}>Réserver</button>
-                      <button className="bo" style={{fontSize:10,letterSpacing:2}} onClick={()=>nav("login")}>Rejoindre CROWDN</button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </div>
-        );
-      })()}
+      <GenreStrip onGenreClick={g=>nav("upcoming",{filterGenre:g})}/>
 
       <GenreStrip onGenreClick={g=>nav("upcoming",{filterGenre:g})}/>
 
