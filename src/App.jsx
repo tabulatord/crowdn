@@ -381,6 +381,63 @@ function PastCard({c,idx,onClick,artistImages={}}) {
   );
 }
 
+function MomentsFeed({nav,user}) {
+  const [moments,setMoments]=useState([]);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    supabase.from("moments").select("*").order("created_at",{ascending:false}).limit(20)
+      .then(({data})=>{setMoments(data||[]);setLoading(false);});
+  },[]);
+
+  return (
+    <div style={{padding:"100px 20px 80px",maxWidth:640,margin:"0 auto"}}>
+      <div style={{textAlign:"center",marginBottom:32}}>
+        <p style={{fontSize:9,color:GOLD,letterSpacing:4,fontWeight:700,textTransform:"uppercase",marginBottom:8}}>Moments</p>
+        <h1 className="fd" style={{fontSize:"clamp(24px,5vw,40px)",fontWeight:300,letterSpacing:2,marginBottom:8}}>Live par la communauté</h1>
+        <p style={{fontSize:11,color:"#555",letterSpacing:1}}>Contenus postés par ceux qui y étaient</p>
+      </div>
+
+      {!user&&(
+        <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid rgba(201,168,76,0.12)",padding:"16px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:28,gap:12}}>
+          <p style={{fontSize:11,color:"#888"}}>Connecte-toi pour publier tes propres Moments</p>
+          <button className="bp" style={{fontSize:9,padding:"8px 18px",flexShrink:0}} onClick={()=>nav("login")}>Rejoindre</button>
+        </div>
+      )}
+
+      {loading?(
+        <div style={{textAlign:"center",padding:40}}><p style={{color:"#555",fontSize:11}}>Chargement...</p></div>
+      ):moments.length===0?(
+        <div style={{textAlign:"center",padding:60}}>
+          <p style={{fontSize:32,marginBottom:16}}>👑</p>
+          <p style={{fontSize:13,color:"#555",marginBottom:8}}>Aucun Moment encore</p>
+          <p style={{fontSize:10,color:"#333"}}>Sois le premier à partager ton expérience live</p>
+          {user&&<button className="bp" style={{marginTop:20,fontSize:9}} onClick={()=>nav("publish-moment")}>Publier un Moment</button>}
+        </div>
+      ):(
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          {moments.map(m=>(
+            <div key={m.id} style={{background:"#111",border:"1px solid rgba(201,168,76,0.06)"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
+                <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:GOLD}}>{m.artist_name?.slice(0,1)||"?"}</div>
+                <div>
+                  <p style={{fontSize:12,fontWeight:700,color:GOLD}}>{m.artist_name}</p>
+                  {m.concert_tag&&<p style={{fontSize:9,color:"#555"}}>{m.concert_tag}</p>}
+                </div>
+              </div>
+              {m.video_url&&(
+                <video controls style={{width:"100%",maxHeight:400,background:"#000"}} src={m.video_url}/>
+              )}
+              {m.caption&&<p style={{padding:"12px 16px",fontSize:12,color:"#aaa",lineHeight:1.6}}>{m.caption}</p>}
+              <div style={{padding:"8px 16px",fontSize:9,color:"#444"}}>{new Date(m.created_at).toLocaleDateString("fr-FR")}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HeroLanding({nav,upcoming}) {
   const U=upcoming||UPCOMING_DEFAULT;
   const [mode]=useState(()=>Math.floor(Math.random()*3));
@@ -425,25 +482,19 @@ function HeroLanding({nav,upcoming}) {
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                   <span style={{fontSize:18,fontWeight:700}}>{featuredArtist.artist}</span>
-                  <span style={{fontSize:12,color:GOLD}}>👑</span>
                 </div>
-                <span style={{fontSize:9,color:"#555",letterSpacing:2}}>ARTISTE CERTIFIÉ CROWDN</span>
+                <span style={{fontSize:9,color:"#555",letterSpacing:2,textTransform:"uppercase"}}>{featuredArtist.genre}</span>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"rgba(201,168,76,0.06)",marginBottom:20}}>
-              {[["12.4K","Followers"],["8","Moments"],["3","Concerts"]].map(([n,l])=>(
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:"rgba(201,168,76,0.06)",marginBottom:24}}>
+              {[["12.4K","Followers"],["—","Moments"],["1","Concert"]].map(([n,l])=>(
                 <div key={l} style={{background:"#0A0A0A",padding:"14px",textAlign:"center"}}>
                   <div className="fd" style={{fontSize:22,fontWeight:700,color:GOLD}}>{n}</div>
                   <div style={{fontSize:8,color:"#555",letterSpacing:2,textTransform:"uppercase",marginTop:2}}>{l}</div>
                 </div>
               ))}
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:3,marginBottom:24}}>
-              {["#0d1117","#111827","#0f172a","#1c1917","#14532d","#1e1b4b"].map((bg,i)=>(
-                <div key={i} style={{aspectRatio:"1",background:bg,border:"1px solid rgba(201,168,76,0.06)",display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:16,opacity:0.2}}>🎵</span></div>
-              ))}
-            </div>
-            <p style={{fontSize:9,color:"#333",textAlign:"center",letterSpacing:2,marginBottom:18}}>SUR CROWDN · LES ARTISTES PARTAGENT LEUR LIVE</p>
+            <p style={{fontSize:9,color:"#333",textAlign:"center",letterSpacing:2,marginBottom:18}}>REJOINS LA COMMUNAUTÉ LIVE</p>
             <div style={{display:"flex",gap:10,justifyContent:"center"}}>
               <button className="bp" style={{fontSize:9}} onClick={()=>nav("login")}>Rejoindre</button>
               <button className="bo" style={{fontSize:9}} onClick={()=>nav("upcoming")}>Voir les concerts</button>
@@ -2857,8 +2908,8 @@ export default function App() {
     {key:"home",label:"Accueil",icon:"🏠"},
     {key:"upcoming",label:"À venir",icon:"🎵"},
     {key:"past",label:"Passés",icon:"🎭"},
+    {key:"moments-feed",label:"Moments",icon:"🎬"},
     {key:"become-jury",label:"Be a Jury",icon:"👑"},
-    ...(!role?[{key:"become-jury",label:"Jury",icon:"👑"}]:[]),
     ...(role==="artist"?[{key:"artist-dash",label:"Mon espace",icon:"👑"}]:[]),
     ...(role==="admin"?[{key:"admin",label:"Admin",icon:"🔑"}]:[]),
   ];
@@ -2892,7 +2943,7 @@ export default function App() {
       {page==="upcoming-detail"&&<UpcomingDetail c={sel} nav={nav} artistImages={artistImages} social={social} user={user}/>}
       {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
       {page==="past-detail"&&<PastDetail c={sel} nav={nav} artistImages={artistImages}/>}
-      {page==="become-jury"&&<BecomeJury nav={nav} user={user} role={role}/>}
+      {page==="moments-feed"&&<MomentsFeed nav={nav} user={user}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages} role={role} userArtistName={userArtistName}/>}
