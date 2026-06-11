@@ -1337,18 +1337,6 @@ function BecomeJury({nav,user,role}) {
         ))}
       </div>
       <div className="gd" style={{marginBottom:40}}/>
-      <p className="sl" style={{marginBottom:8}}>Sur quoi le jury note</p>
-      <p style={{fontSize:12,color:"#777",marginBottom:24}}>6 critères publics et transparents. Chaque juré note de 1 à 10.</p>
-      <div style={{marginBottom:48}}>
-        {CRITERIA.map((c,i)=>(
-          <div key={c.name} className="criteria-pill" style={{animation:`fadeUp 0.4s ${i*0.07}s ease both`,opacity:0}}>
-            <span style={{fontSize:20,flexShrink:0}}>{c.icon}</span>
-            <div style={{flex:1}}><p style={{fontWeight:700,fontSize:12,color:GOLD,marginBottom:2}}>{c.name}</p><p style={{fontSize:11,color:"#888"}}>{c.desc}</p></div>
-            <span style={{fontSize:11,color:"#555",fontWeight:600,letterSpacing:1}}>/ 10</span>
-          </div>
-        ))}
-      </div>
-      <div className="gd" style={{marginBottom:40}}/>
       {success&&<div style={{background:"rgba(76,200,100,0.1)",border:"1px solid rgba(76,200,100,0.3)",padding:16,textAlign:"center",marginBottom:24}}><p style={{color:"#4CC864",fontSize:13,fontWeight:600}}>{success}</p></div>}
       {user&&!success?(
         <div>
