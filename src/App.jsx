@@ -210,6 +210,9 @@ const PAST_DEFAULT = [
   {id:13,artist:"Slimane",date:"8 Avr 2025",city:"Paris",venue:"Accor Arena",category:"Arena Class",genre:"Pop",img:"🎶",juryQuote:"",juryName:"",juryAvatar:"",juryHandle:"",tiktokUrl:"",photos:[]},
 ];
 
+const CAT_LABEL={"Olympia Class":"O","Zenith Class":"Z","Arena Class":"A","Stadium Class":"S"};
+const catLabel=c=>CAT_LABEL[c]||c?.replace(" Class","")||"?";
+
 const JURY_TYPES = [
   {icon:"📰",type:"Journaliste",tag:"Officiel",desc:"Critique musical ou journaliste culturel avec expérience live reconnue.",color:"#E8C96A"},
   {icon:"🎶",type:"Acteur de la musique",tag:"Officiel",desc:"Professionnel de l'industrie : manager, tourneur, directeur artistique, booker.",color:"#E8C96A"},
@@ -438,7 +441,7 @@ function MomentsFeed({nav,user}) {
   );
 }
 
-function HeroLanding({nav,upcoming}) {
+function HeroLanding({nav,upcoming,artistImages={}}) {
   const U=upcoming||UPCOMING_DEFAULT;
   const [mode]=useState(()=>Math.floor(Math.random()*3));
   const featuredArtist=useMemo(()=>U[Math.floor(Math.random()*Math.min(5,U.length))]||U[0],[]);
@@ -475,9 +478,13 @@ function HeroLanding({nav,upcoming}) {
           <div style={{position:"relative",zIndex:2,width:"100%",maxWidth:460,margin:"0 auto",padding:"0 24px"}}>
             <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:24}}>
               <div style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#8B6914,#C9A84C)",padding:2,flexShrink:0}}>
+                {artistImages[featuredArtist.artist]?(
+                  <img src={artistImages[featuredArtist.artist]} style={{width:"100%",height:"100%",borderRadius:"50%",objectFit:"cover",border:"3px solid #0A0A0A"}} alt={featuredArtist.artist}/>
+                ):(
                 <div style={{width:"100%",height:"100%",borderRadius:"50%",background:"#1a1a1a",border:"3px solid #0A0A0A",display:"flex",alignItems:"center",justifyContent:"center"}}>
                   <span style={{fontSize:14,fontWeight:700,color:GOLD}}>{featuredArtist.artist?.slice(0,2).toUpperCase()}</span>
                 </div>
+                )}
               </div>
               <div>
                 <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
@@ -506,7 +513,10 @@ function HeroLanding({nav,upcoming}) {
       {/* MODE 2 — Concert (Live Nation) */}
       {mode===2&&nextConcert&&(
         <div style={{height:"100%",position:"relative",overflow:"hidden",display:"flex",alignItems:"flex-end"}}>
-          <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#0a0a0a 0%,#1a1205 40%,#0a0a0a 100%)"}}/>
+          {artistImages[nextConcert.artist]&&(
+            <div style={{position:"absolute",inset:0,backgroundImage:`url(${artistImages[nextConcert.artist]})`,backgroundSize:"cover",backgroundPosition:"center top",filter:"brightness(0.4) blur(2px)",transform:"scale(1.05)"}}/>
+          )}
+          <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,#0a0a0a 0%,rgba(26,18,5,0.7) 40%,#0a0a0a 100%)"}}/>
           {["-30%","0%","30%"].map((x,i)=>(
             <div key={i} style={{position:"absolute",top:0,left:"50%",transform:`translateX(${x})`,width:"1px",height:"60%",background:`linear-gradient(to bottom, rgba(201,168,76,${0.12+i*0.04}), transparent)`,filter:"blur(8px)"}}/>
           ))}
@@ -617,7 +627,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
                       </div>
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         <TicketButton artist={c.artist} venue={c.venue} city={c.city} ticketUrl={c.ticket_url} size="small"/>
-                        <div style={{textAlign:"right"}}><span className="tag" style={{fontSize:7}}>{c.category}</span><div style={{fontSize:10,color:GOLD,marginTop:3}}>{c.daysLeft}j</div></div>
+                        <div style={{textAlign:"right"}}><span className="tag" style={{fontSize:7}}>{catLabel(c.category)}</span><div style={{fontSize:10,color:GOLD,marginTop:3}}>{c.daysLeft}j</div></div>
                       </div>
                     </div>
                   ))}
@@ -700,7 +710,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
       ):(
       <>
       {/* ═══ NOT LOGGED IN → Hero rotatif 3 modes ═══ */}
-      <HeroLanding nav={nav} upcoming={U}/>
+      <HeroLanding nav={nav} upcoming={U} artistImages={artistImages}/>
 
       <GenreStrip onGenreClick={g=>nav("upcoming",{filterGenre:g})}/>
 
@@ -731,7 +741,7 @@ function HomePage({nav,upcoming,past,artistImages={},social,user}) {
                   <div key={c.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:BG2,border:"1px solid rgba(201,168,76,0.08)",cursor:"pointer"}} onClick={()=>nav("upcoming-detail",c)}>
                     <ArtistImg name={c.artist} fallback={c.img} size={32} images={artistImages}/>
                     <div style={{flex:1}}><span style={{fontWeight:600,fontSize:12}}>{c.artist}</span><span style={{fontSize:10,color:"#888",marginLeft:8}}>{c.date} · {c.venue}</span></div>
-                    <span className="tag" style={{fontSize:7}}>{c.category}</span>
+                    <span className="tag" style={{fontSize:7}}>{catLabel(c.category)}</span>
                   </div>
                 ))}
               </div>
@@ -869,7 +879,7 @@ function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
                     <div><p style={{fontSize:11,color:"#aaa"}}>{c.date}</p><p style={{fontSize:11,color:"#777"}}>{c.city} · {c.venue}</p></div>
                     <div style={{display:"flex",alignItems:"center",gap:6}}>
                       <TicketButton artist={c.artist} venue={c.venue} city={c.city} ticketUrl={c.ticket_url} size="small"/>
-                      <span className="tag" style={{fontSize:8}}>{c.category}</span>
+                      <span className="tag" style={{fontSize:8}}>{catLabel(c.category)}</span>
                     </div>
                   </div>
                 </div>
@@ -901,7 +911,7 @@ function UpcomingDetail({c,nav,artistImages={},social={},user}) {
           </div>
           <p style={{fontSize:13,color:"#888",marginBottom:12}}>{c.date} · {c.city} · {c.venue}</p>
           <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",alignItems:"center",marginBottom:16}}>
-            <span className="tag">{c.category}</span>
+            <span className="tag">{catLabel(c.category)}</span>
             <span style={{padding:"4px 12px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",fontSize:11,color:"#aaa",display:"flex",alignItems:"center",gap:6}}><GenreIcon name={c.genre} size={14}/>{c.genre}</span>
           </div>
           {user&&<div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
@@ -1150,7 +1160,7 @@ function PastDetail({c,nav,artistImages={}}) {
         <p className="sl" style={{marginBottom:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><GenreIcon name={c.genre} size={16}/>{c.genre}</p>
         <h1 className="fd" style={{fontSize:"clamp(28px,6vw,48px)",fontWeight:400,letterSpacing:3,marginBottom:8,cursor:"pointer",textDecoration:"underline",textDecorationColor:"rgba(201,168,76,0.3)"}} onClick={()=>nav("artist",{artistName:c.artist})}>{c.artist}</h1>
         <p style={{fontSize:13,color:"#888",marginBottom:16}}>{c.date} · {c.city} · {c.venue}</p>
-        <span className="tag">{c.category}</span>
+        <span className="tag">{catLabel(c.category)}</span>
       </div>
       <div style={{maxWidth:620,margin:"0 auto",padding:"20px 20px 0"}}>
         {c.juryQuote&&(
@@ -1257,7 +1267,7 @@ function ArtistPage({artistName,nav,social,user,artistImages={},upcomingData=[]}
               <div style={{display:"flex",alignItems:"center",gap:16,padding:"16px 20px"}}>
                 <div style={{flex:1}}><p style={{fontWeight:700,fontSize:13}}>{c.date} · {c.city}</p><p style={{fontSize:11,color:"#888",marginTop:2}}>{c.venue}</p></div>
                 <TicketButton artist={c.artist} venue={c.venue} city={c.city} ticketUrl={c.ticket_url} size="small"/>
-                <span className="tag" style={{fontSize:8}}>{c.category}</span>
+                <span className="tag" style={{fontSize:8}}>{catLabel(c.category)}</span>
               </div>
             </div>
           ))}
@@ -2176,7 +2186,7 @@ function ArtistDash({user,artistName,artistImages={},upcomingData=[]}) {
             <p style={{fontWeight:600,fontSize:13}}>{c.venue}</p>
             <p style={{fontSize:10,color:"#888"}}>{c.date} · {c.city}</p>
           </div>
-          <span className="tag" style={{fontSize:8}}>{c.category}</span>
+          <span className="tag" style={{fontSize:8}}>{catLabel(c.category)}</span>
         </div>
       ))}
 
@@ -2446,7 +2456,7 @@ function AdminDash({upcomingData,pastData,onRefresh}) {
           )}
           <div style={{background:BG2,border:"1px solid rgba(201,168,76,0.08)",overflow:"auto"}}>
             <table className="at"><thead><tr><th>Artiste</th><th>Genre</th><th>Date</th><th>Ville</th><th>Catégorie</th><th>Actions</th></tr></thead>
-              <tbody>{U.slice(0,30).map((c,i)=>(<tr key={i}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{c.genre}</td><td>{c.date}</td><td>{c.city}</td><td><span className="tag" style={{fontSize:8}}>{c.category}</span></td><td><button style={{background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF5050",fontSize:8,padding:"3px 8px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>deleteConcert(c.id)}>✗</button></td></tr>))}</tbody>
+              <tbody>{U.slice(0,30).map((c,i)=>(<tr key={i}><td style={{fontWeight:600,color:"#eee"}}>{c.artist}</td><td>{c.genre}</td><td>{c.date}</td><td>{c.city}</td><td><span className="tag" style={{fontSize:8}}>{catLabel(c.category)}</span></td><td><button style={{background:"rgba(255,50,50,0.08)",border:"1px solid rgba(255,50,50,0.25)",color:"#FF5050",fontSize:8,padding:"3px 8px",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontWeight:700}} onClick={()=>deleteConcert(c.id)}>✗</button></td></tr>))}</tbody>
             </table>
           </div>
           {U.length>30&&<p style={{fontSize:10,color:"#666",marginTop:8,textAlign:"center"}}>+ {U.length-30} concerts supplémentaires</p>}
@@ -2944,6 +2954,7 @@ export default function App() {
       {page==="past"&&<PastPage nav={nav} concerts={pastData} artistImages={artistImages}/>}
       {page==="past-detail"&&<PastDetail c={sel} nav={nav} artistImages={artistImages}/>}
       {page==="moments-feed"&&<MomentsFeed nav={nav} user={user}/>}
+      {page==="become-jury"&&<BecomeJury nav={nav} user={user} role={role}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages} role={role} userArtistName={userArtistName}/>}
