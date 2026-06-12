@@ -833,7 +833,7 @@ function UpcomingPage({nav,initialGenre,concerts,artistImages={}}) {
               <button key={c} onClick={()=>setActiveCat(c)}
                 style={{display:"flex",alignItems:"center",gap:10,padding:"8px 14px",background:activeCat===c?"rgba(201,168,76,0.1)":"transparent",border:`1px solid ${activeCat===c?"rgba(201,168,76,0.4)":"rgba(255,255,255,0.06)"}`,color:activeCat===c?GOLD:"#888",cursor:"pointer",fontFamily:"'Montserrat',sans-serif",fontSize:10,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",transition:"all 0.2s",textAlign:"left"}}>
                 {labels[c]?<span style={{width:22,height:22,border:`1px solid ${activeCat===c?GOLD:"rgba(255,255,255,0.15)"}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,fontFamily:"'Cormorant Garamond',serif"}}>{labels[c]}</span>:"🎵"}
-                <div><span style={{display:"block"}}>{c==="Toutes"?c:c.replace(" Class","")}</span>{sizes[c]&&<span style={{fontSize:7,color:"#555",fontWeight:400,letterSpacing:0,textTransform:"none"}}>{sizes[c]} places</span>}</div>
+                <div>{c==="Toutes"?<span style={{display:"block"}}>Toutes</span>:<span style={{fontSize:9,color:activeCat===c?GOLD:"#888",fontWeight:600,letterSpacing:0,textTransform:"none"}}>{sizes[c]} places</span>}</div>
               </button>
             );})}
           </div>
