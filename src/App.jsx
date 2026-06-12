@@ -384,13 +384,93 @@ function PastCard({c,idx,onClick,artistImages={}}) {
   );
 }
 
+const DEMO_MOMENTS = [
+  {
+    id:"demo1",
+    type:"video",
+    url:"https://orxyigdszptjptzenmpd.supabase.co/storage/v1/object/public/moments/crowdn-moment-fan-video.mp4",
+    user:"Léa R.",
+    avatar:"https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=80&h=80&fit=crop&crop=faces",
+    artist:"NOVÆ",
+    venue:"Accor Arena · Paris",
+    date:"22 Déc 2026",
+    caption:"Toute la salle en feu 🔥 frissons du début à la fin",
+    crowns:28,comments:6,shares:12
+  },
+  {
+    id:"demo2",
+    type:"photo",
+    url:"https://orxyigdszptjptzenmpd.supabase.co/storage/v1/object/public/moments/crowdn-moment-fan-photo.jpg",
+    user:"Marc T.",
+    avatar:"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=faces",
+    artist:"SÉRAPH",
+    venue:"Olympia · Paris",
+    date:"15 Nov 2026",
+    caption:"Lumières incroyables, show de fou ✨",
+    crowns:56,comments:9,shares:21
+  },
+];
+
+function MomentCard({m,user,nav}) {
+  const [liked,setLiked]=useState(false);
+  return (
+    <div style={{position:"relative",width:"100%",maxWidth:380,margin:"0 auto",aspectRatio:"9/16",borderRadius:18,overflow:"hidden",background:"#111",boxShadow:"0 10px 40px rgba(0,0,0,0.5)"}}>
+      {m.type==="video"?(
+        <video src={m.url} loop muted playsInline autoPlay style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+      ):(
+        <img src={m.url} alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+      )}
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(to top,rgba(0,0,0,0.92) 0%,transparent 38%,rgba(0,0,0,0.45) 100%)"}}/>
+
+      {/* User top-left */}
+      <div style={{position:"absolute",top:14,left:14,display:"flex",alignItems:"center",gap:8,zIndex:3}}>
+        <div style={{width:34,height:34,borderRadius:"50%",overflow:"hidden",border:"2px solid #C9A84C",boxShadow:"0 0 12px rgba(201,168,76,0.4)"}}>
+          <img src={m.avatar} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+        </div>
+        <span style={{fontSize:13,fontWeight:600,color:"#fff",textShadow:"0 1px 4px rgba(0,0,0,0.9)"}}>{m.user}</span>
+      </div>
+
+      {/* Badge top-right */}
+      <div style={{position:"absolute",top:14,right:14,background:"linear-gradient(135deg,#8B6914,#C9A84C)",color:"#000",fontSize:8,fontWeight:800,padding:"4px 9px",borderRadius:6,letterSpacing:1,zIndex:3,display:"flex",alignItems:"center",gap:3}}>
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="#000"><path d="M5 16L7 9L12 13L17 9L19 16Z"/></svg>
+        ÉTAIT LÀ
+      </div>
+
+      {/* Side actions */}
+      <div style={{position:"absolute",right:12,bottom:110,display:"flex",flexDirection:"column",gap:18,zIndex:3,alignItems:"center"}}>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}} onClick={()=>setLiked(!liked)}>
+          <div style={{width:42,height:42,borderRadius:"50%",background:liked?"rgba(201,168,76,0.25)":"rgba(255,255,255,0.12)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill={liked?"#C9A84C":"#fff"}><path d="M5 16L7 9L12 13L17 9L19 16Z"/><rect x="6" y="16" width="12" height="2" rx="1"/></svg>
+          </div>
+          <span style={{fontSize:9,color:"#fff",fontWeight:600}}>{m.crowns+(liked?1:0)}</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>💬</div>
+          <span style={{fontSize:9,color:"#fff",fontWeight:600}}>{m.comments}</span>
+        </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+          <div style={{width:42,height:42,borderRadius:"50%",background:"rgba(255,255,255,0.12)",backdropFilter:"blur(4px)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>↗</div>
+          <span style={{fontSize:9,color:"#fff",fontWeight:600}}>{m.shares}</span>
+        </div>
+      </div>
+
+      {/* Bottom info */}
+      <div style={{position:"absolute",bottom:0,left:0,right:0,padding:16,zIndex:3}}>
+        <div style={{fontSize:17,fontWeight:700,color:"#C9A84C",letterSpacing:1,marginBottom:4}}>{m.artist}</div>
+        <div style={{fontSize:10,color:"rgba(255,255,255,0.78)",marginBottom:8}}>📍 {m.venue} · {m.date}</div>
+        <div style={{fontSize:13,color:"#fff",lineHeight:1.45,fontWeight:500}}>"{m.caption}"</div>
+      </div>
+    </div>
+  );
+}
+
 function MomentsFeed({nav,user}) {
-  const [moments,setMoments]=useState([]);
+  const [dbMoments,setDbMoments]=useState([]);
   const [loading,setLoading]=useState(true);
 
   useEffect(()=>{
     supabase.from("moments").select("*").order("created_at",{ascending:false}).limit(20)
-      .then(({data})=>{setMoments(data||[]);setLoading(false);});
+      .then(({data})=>{setDbMoments(data||[]);setLoading(false);});
   },[]);
 
   return (
@@ -408,35 +488,19 @@ function MomentsFeed({nav,user}) {
         </div>
       )}
 
-      {loading?(
-        <div style={{textAlign:"center",padding:40}}><p style={{color:"#555",fontSize:11}}>Chargement...</p></div>
-      ):moments.length===0?(
-        <div style={{textAlign:"center",padding:60}}>
-          <p style={{fontSize:32,marginBottom:16}}>👑</p>
-          <p style={{fontSize:13,color:"#555",marginBottom:8}}>Aucun Moment encore</p>
-          <p style={{fontSize:10,color:"#333"}}>Sois le premier à partager ton expérience live</p>
-          {user&&<button className="bp" style={{marginTop:20,fontSize:9}} onClick={()=>nav("publish-moment")}>Publier un Moment</button>}
-        </div>
-      ):(
-        <div style={{display:"flex",flexDirection:"column",gap:16}}>
-          {moments.map(m=>(
-            <div key={m.id} style={{background:"#111",border:"1px solid rgba(201,168,76,0.06)"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)"}}>
-                <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(201,168,76,0.1)",border:"1px solid rgba(201,168,76,0.2)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:GOLD}}>{m.artist_name?.slice(0,1)||"?"}</div>
-                <div>
-                  <p style={{fontSize:12,fontWeight:700,color:GOLD}}>{m.artist_name}</p>
-                  {m.concert_tag&&<p style={{fontSize:9,color:"#555"}}>{m.concert_tag}</p>}
-                </div>
-              </div>
-              {m.video_url&&(
-                <video controls style={{width:"100%",maxHeight:400,background:"#000"}} src={m.video_url}/>
-              )}
-              {m.caption&&<p style={{padding:"12px 16px",fontSize:12,color:"#aaa",lineHeight:1.6}}>{m.caption}</p>}
-              <div style={{padding:"8px 16px",fontSize:9,color:"#444"}}>{new Date(m.created_at).toLocaleDateString("fr-FR")}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <div style={{display:"flex",flexDirection:"column",gap:24}}>
+        {DEMO_MOMENTS.map(m=>(
+          <MomentCard key={m.id} m={m} user={user} nav={nav}/>
+        ))}
+        {dbMoments.map(m=>(
+          <MomentCard key={m.id} m={{
+            id:m.id,type:m.video_url?"video":"photo",url:m.video_url||m.photo_url,
+            user:m.user_name||"Membre",avatar:m.user_avatar||"",artist:m.artist_name,
+            venue:m.concert_tag||"",date:new Date(m.created_at).toLocaleDateString("fr-FR"),
+            caption:m.caption||"",crowns:m.likes||0,comments:0,shares:0
+          }} user={user} nav={nav}/>
+        ))}
+      </div>
     </div>
   );
 }
