@@ -3035,10 +3035,17 @@ export default function App() {
             <span style={{fontSize:7,marginTop:2,display:"block"}}>Moment</span>
           </button>
         )}
-        <button className={`mni ${page==="become-jury"&&user?"active":""}`} onClick={()=>nav("become-jury")}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9Z"/></svg>
-          Jury
-        </button>
+        {user?(
+          <button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9Z"/></svg>
+            Be a Jury
+          </button>
+        ):(
+          <button className={`mni ${page==="past"?"active":""}`} onClick={()=>nav("past")}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7V12L15 15"/></svg>
+            Passés
+          </button>
+        )}
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1.5"/><path d="M8 11V7A4 4 0 0116 7V11"/></svg>
           Login
