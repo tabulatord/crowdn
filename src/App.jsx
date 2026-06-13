@@ -141,10 +141,23 @@ function GenreIcon({name,size=20}) {
 
 function daysUntil(dateStr) {
   const parts = dateStr.split(" ");
-  const months = {"Jan":0,"Fév":1,"Mar":2,"Avr":3,"Mai":4,"Juin":5,"Juil":6,"Août":7,"Sep":8,"Oct":9,"Nov":10,"Déc":11};
+  const months = {"Jan":0,"Fév":1,"Mar":2,"Avr":3,"Mai":4,"Juin":5,"Juil":6,"Août":7,"Sep":8,"Oct":9,"Nov":10,"Déc":11,"Jul":6,"Aug":7,"Apr":3,"Dec":11,"May":4,"Jun":5,"Mar.":2};
   const d = new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
   const diff = Math.ceil((d - new Date()) / (1000*60*60*24));
   return diff > 0 ? diff : 0;
+}
+
+function concertDate(dateStr) {
+  const parts = dateStr.split(" ");
+  const months = {"Jan":0,"Fév":1,"Mar":2,"Avr":3,"Mai":4,"Juin":5,"Juil":6,"Août":7,"Sep":8,"Oct":9,"Nov":10,"Déc":11,"Jul":6,"Aug":7,"Apr":3,"Dec":11,"May":4,"Jun":5};
+  return new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
+}
+
+function isPast(dateStr) {
+  const d = concertDate(dateStr);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return d < today;
 }
 
 function getTicketUrl(artist, venue, city) {
@@ -2929,8 +2942,15 @@ export default function App() {
       try{
         const{data:upcoming}=await supabase.from("upcoming_concerts").select("*").order("id");
         const{data:past}=await supabase.from("past_concerts").select("*").order("id");
-        if(upcoming&&upcoming.length>0){setUpcomingData(upcoming.map(c=>({...c,daysLeft:daysUntil(c.date)})));}
-        if(past&&past.length>0){setPastData(past.map(c=>({...c,juryQuote:c.jury_quote,juryName:c.jury_name,juryAvatar:c.jury_avatar,juryHandle:c.jury_handle,tiktokUrl:c.tiktok_url,photos:["📸","🎬","🌟"]})));}
+        // Bascule automatique : concerts "à venir" dont la date est passée → vers passés
+        let upcomingList = upcoming&&upcoming.length>0 ? upcoming : UPCOMING_DEFAULT;
+        let pastList = past&&past.length>0 ? past.map(c=>({...c,juryQuote:c.jury_quote,juryName:c.jury_name,juryAvatar:c.jury_avatar,juryHandle:c.jury_handle,tiktokUrl:c.tiktok_url,photos:["📸","🎬","🌟"]})) : PAST_DEFAULT;
+        const stillUpcoming = upcomingList.filter(c=>!isPast(c.date)).map(c=>({...c,daysLeft:daysUntil(c.date)}));
+        const movedToPast = upcomingList.filter(c=>isPast(c.date)).map(c=>({...c,photos:["📸","🎬","🌟"]}));
+        // Tri des concerts à venir par date croissante (le plus proche en premier)
+        stillUpcoming.sort((a,b)=>concertDate(a.date)-concertDate(b.date));
+        setUpcomingData(stillUpcoming);
+        setPastData([...movedToPast,...pastList]);
       }catch(e){console.log("Données locales utilisées");}
     }
     fetchData();
