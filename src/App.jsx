@@ -16,7 +16,8 @@ const ADMIN_EMAIL = "ltabula@me.com";
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,700&family=Montserrat:wght@300;400;500;600;700;800&display=swap');
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#0A0A0A; color:#F5F0E8; font-family:'Montserrat',sans-serif; overflow-x:hidden; }
+  html, body { overflow-x:hidden; width:100%; max-width:100%; position:relative; }
+  body { background:#0A0A0A; color:#F5F0E8; font-family:'Montserrat',sans-serif; }
   .fd { font-family:'Cormorant Garamond',serif; }
   ::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:#0A0A0A} ::-webkit-scrollbar-thumb{background:#8B6914}
   .gt { background:linear-gradient(135deg,#C9A84C,#E8C96A,#C9A84C); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
@@ -476,6 +477,31 @@ function MomentCard({m,user,nav}) {
     </div>
   );
 }
+function SearchPage({nav,upcomingData=[],pastData=[],artistImages={}}){
+  const [q,setQ]=useState("");
+  const allArtists=useMemo(()=>{
+    const names=new Set();
+    [...upcomingData,...pastData].forEach(c=>{if(c.artist)names.add(c.artist);});
+    return Array.from(names).sort();
+  },[upcomingData,pastData]);
+  const results=q.trim()===""?[]:allArtists.filter(a=>a.toLowerCase().includes(q.toLowerCase()));
+  return(
+    <div style={{maxWidth:600,margin:"0 auto",padding:"100px 16px 100px"}}>
+      <h1 className="fd" style={{fontSize:28,fontWeight:400,letterSpacing:2,marginBottom:20,color:"#C9A84C"}}>Recherche</h1>
+      <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Rechercher un artiste..."
+        style={{width:"100%",padding:"14px 18px",background:"#141414",border:"1px solid rgba(201,168,76,0.2)",borderRadius:12,color:"#F5F0E8",fontSize:15,fontFamily:"inherit",outline:"none",marginBottom:20,boxSizing:"border-box"}}/>
+      {q.trim()!==""&&results.length===0&&(<p style={{color:"#888",textAlign:"center",marginTop:30}}>Aucun artiste trouvé pour « {q} »</p>)}
+      {results.map(name=>(
+        <div key={name} onClick={()=>nav("artist",{artistName:name})} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 16px",background:"#141414",border:"1px solid rgba(201,168,76,0.08)",borderRadius:10,marginBottom:8,cursor:"pointer"}}>
+          {artistImages[name]?(<img src={artistImages[name]} alt={name} style={{width:44,height:44,borderRadius:"50%",objectFit:"cover"}}/>):(<div style={{width:44,height:44,borderRadius:"50%",background:"linear-gradient(135deg,#3a2f1a,#1a1a22)",display:"flex",alignItems:"center",justifyContent:"center",color:"#C9A84C",fontWeight:700}}>{name[0]}</div>)}
+          <span style={{fontWeight:600,color:"#F5F0E8"}}>{name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
 
 function MomentsFeed({nav,user}) {
   const [dbMoments,setDbMoments]=useState([]);
@@ -2987,15 +3013,13 @@ export default function App() {
   };
 
   const navItems=[
-    {key:"home",label:"Accueil",icon:"🏠"},
-    {key:"upcoming",label:"À venir",icon:"🎵"},
-    {key:"past",label:"Passés",icon:"🎭"},
+    {key:"home",label:"Feed",icon:"🏠"},
+    {key:"upcoming",label:"Concerts",icon:"🎵"},
     {key:"moments-feed",label:"Moments",icon:"🎬"},
-    {key:"become-jury",label:"Be a Jury",icon:"👑"},
+    {key:"profile",label:"Profil",icon:"👤"},
     ...(role==="artist"?[{key:"artist-dash",label:"Mon espace",icon:"👑"}]:[]),
     ...(role==="admin"?[{key:"admin",label:"Admin",icon:"🔑"}]:[]),
   ];
-
   return (
     <div style={{overflowX:"hidden",maxWidth:"100vw"}}>
       <style>{styles}</style>
@@ -3027,6 +3051,7 @@ export default function App() {
       {page==="past-detail"&&<PastDetail c={sel} nav={nav} artistImages={artistImages}/>}
       {page==="moments-feed"&&<MomentsFeed nav={nav} user={user}/>}
       {page==="become-jury"&&<BecomeJury nav={nav} user={user} role={role}/>}
+      {page==="search"&&<SearchPage nav={nav} upcomingData={upcomingData} pastData={pastData} artistImages={artistImages}/>}
       {page==="how-it-works"&&<HowItWorks nav={nav}/>}
       {page==="artist"&&<ArtistPage artistName={artistName} nav={nav} social={social} user={user} artistImages={artistImages} upcomingData={upcomingData}/>}
       {page==="profile"&&user&&<UserProfile user={user} social={social} nav={nav} upcomingData={upcomingData} artistImages={artistImages} role={role} userArtistName={userArtistName}/>}
@@ -3119,17 +3144,10 @@ export default function App() {
             <span style={{fontSize:7,marginTop:2,display:"block"}}>Moment</span>
           </button>
         )}
-        {user?(
-          <button className={`mni ${page==="become-jury"?"active":""}`} onClick={()=>nav("become-jury")}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9Z"/></svg>
-            Be a Jury
+        <button className={`mni ${page==="search"?"active":""}`} onClick={()=>nav("search")}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+            Recherche
           </button>
-        ):(
-          <button className={`mni ${page==="past"?"active":""}`} onClick={()=>nav("past")}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7V12L15 15"/></svg>
-            Passés
-          </button>
-        )}
         {!role&&<button className={`mni ${page==="login"?"active":""}`} onClick={()=>nav("login")}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="11" width="14" height="10" rx="2"/><circle cx="12" cy="16" r="1.5"/><path d="M8 11V7A4 4 0 0116 7V11"/></svg>
           Login
